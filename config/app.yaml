@@ -1,0 +1,26 @@
+# 业务参数（不含密钥；密钥在 .env）
+collect:
+  max_notes: 10            # 搜索结果取前 10 篇
+  comments_per_note: 2     # 每篇取点赞最多的 2 条评论
+  max_comments: 20         # 评论总数上限
+  default_keywords: ["低温酸奶"]
+
+http:
+  max_retries: 3           # 429 / 5xx 最多重试次数
+  backoff_base_seconds: 1.0  # 指数退避：1s, 2s, 4s
+
+xhs:
+  timeout_seconds: 30
+
+llm:
+  timeout_seconds: 120
+  temperature: 0.3
+
+image:
+  timeout_seconds: 180
+  max_retries: 2           # 生图最多重试 2 次
+  size: "1024x1024"
+
+paths:
+  data_dir: data
+  logs_dir: logs
