@@ -217,6 +217,10 @@ def run_check(
         if missing:
             return result(False, None, f"缺少必填配置：{'、'.join(missing)}（请在 .env 中填写后重新启动）",
                           error_type="config_missing")
+        invalid = cfg.invalid(service)
+        if invalid:
+            return result(False, None, "接口地址填写有误：" + "；".join(invalid) + "（请在 .env 中改正后重新启动）",
+                          error_type="config_invalid")
         logs_dir = cfg.paths.logs_dir if cfg.paths.logs_dir.is_absolute() else ROOT / cfg.paths.logs_dir
         saver = _Saver(diag_dir or logs_dir / "diag", now or dt.datetime.now(), rid)
         try:
