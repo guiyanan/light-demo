@@ -29,6 +29,8 @@ logger = logging.getLogger(__name__)
 MAX_KEYWORDS = 3
 MAX_PAGES_PER_KEYWORD = 5  # 防止接口一直返回重复内容时无限翻页
 AD_FLAGS = ("order_cooperate", "commercial_bridge_note")
+# 评论排序：like_count = 按点赞从高到低（2026-11-04 实测确认；另有 default、latest_v2）
+COMMENT_SORT_BY_LIKES = "like_count"
 # 不保存的用户身份字段（R7）
 IDENTITY_KEYS = frozenset(
     {"user", "user_info", "nickname", "original_name", "userid", "user_id", "red_id", "images", "avatar",
@@ -81,13 +83,19 @@ class XhsClient:
         return self.http.get(SEARCH_PATH, params=params)
 
     def get_note_comments_raw(
-        self, note_id: str, cursor: str | None = None, xsec_token: str | None = None
+        self,
+        note_id: str,
+        cursor: str | None = None,
+        xsec_token: str | None = None,
+        sort_strategy: str | None = None,
     ) -> HttpResult:
         params: dict[str, Any] = {"note_id": note_id}
         if cursor:
             params["cursor"] = cursor
         if xsec_token:
             params["xsec_token"] = xsec_token
+        if sort_strategy:
+            params["sort_strategy"] = sort_strategy
         return self.http.get(COMMENTS_PATH, params=params)
 
 
@@ -266,7 +274,8 @@ class SearchResult:
     points: int = 0  # 聚道云消耗点数
 
 
-def _points(data: Any) -> int:
+def consumed_points(data: Any) -> int:
+    """本次调用消耗的聚道云点数（取不到时为 0）。"""
     try:
         return _int(data["data"].get("consumedPoints"))
     except (KeyError, TypeError, AttributeError):
@@ -290,7 +299,7 @@ def search_top_notes(client: XhsClient, keywords: Iterable[str], *, max_notes: i
                 return
             data = client.search_notes_raw(kw, page=page).data
             res.raw_pages.append({"keyword": kw, "page": page, "response": scrub_identity(data)})
-            res.points += _points(data)
+            res.points += consumed_points(data)
             items, has_more = parse_search_page(data)
             logger.info(
                 f"搜索「{kw}」第 {page} 页：{len(items)} 篇",
@@ -323,3 +332,35 @@ def search_top_notes(client: XhsClient, keywords: Iterable[str], *, max_notes: i
         if not progressed:
             break
     return res
+
+
+# ---------------- 评论解析（R6、R7） ----------------
+def clean_text(text: str) -> str:
+    """去掉搜索高亮等标记。"""
+    return _HIGHLIGHT_RE.sub("", text or "").strip()
+
+
+def parse_comments(data: Any, note_id: str) -> list[dict[str, Any]]:
+    """把一页评论标准化为 {comment_id, note_id, content, likes}（保持接口顺序）。
+    跳过隐藏 / 失效 / 去掉 @昵称后没有内容的评论；不含任何用户身份字段。"""
+    _check_business(data)
+    try:
+        lst = data["data"]["result"]["list"]
+        raw = lst.get("comments", []) if isinstance(lst, dict) else lst
+    except (KeyError, TypeError) as e:
+        raise InvalidResponseError(
+            f"评论结构不符合预期（缺少 {e}）", service=XhsClient.service, status_code=200
+        ) from e
+    if not isinstance(raw, list):
+        raise InvalidResponseError("评论列表不是数组", service=XhsClient.service, status_code=200)
+    out: list[dict[str, Any]] = []
+    for c in raw:
+        if not isinstance(c, dict) or c.get("hidden") or c.get("invalid"):
+            continue
+        content = clean_text(strip_mentions(str(c.get("content") or ""), c.get("at_users")))
+        if not content:
+            continue
+        out.append(
+            {"comment_id": str(c.get("id") or ""), "note_id": note_id, "content": content, "likes": _int(c.get("like_count"))}
+        )
+    return out
