@@ -21,38 +21,38 @@
 
 ## 第 1 轮：基础 + 接口检查
 
-- [ ] **Step 1：项目骨架 + CI + Docker + start.command**
+- [x] **Step 1：项目骨架 + CI + Docker + start.command**
   - 首次准备（Claude 执行）：把仓库 clone 到 `文稿/光明demo`，从 `.env.example` 生成 `.env`（密钥留空）；用户只需打开 `.env` 粘贴密钥
   - 对应需求：R17、S7
   - 修改文件：`CLAUDE.md` `AGENTS.md` `README.md` `docs/*.md` `.gitignore` `.env.example` `requirements*.txt` `pyproject.toml` `app/__init__.py` `app/ui/streamlit_app.py`（空白首页） `Dockerfile` `docker-compose.yml` `.dockerignore` `start.command` `.github/workflows/ci.yml`
   - 单元测试：`tests/test_skeleton.py::test_app_importable`、`::test_gitignore_excludes_secrets_and_runtime`（`.env`、`logs/`、`data/runs/`、`data/cache/`）、`::test_env_example_has_all_keys`、`::test_start_command_runs_pull_and_compose`、`::test_compose_mounts_data_and_logs`
   - 说明：首个 commit 直接进 `main`，之后开启分支保护，后续走 `feature/*` → PR
-  - Commit：
+  - Commit：2baadba
 
-- [ ] **Step 2：配置加载**
+- [x] **Step 2：配置加载**
   - 对应需求：R1
   - 修改文件：`app/config.py` `config/app.yaml`
   - 单元测试：`tests/test_config.py::test_load_ok`、`::test_missing_required_names_field`、`::test_mask_secret_shows_first_4`、`::test_yaml_values_loaded`
-  - Commit：
+  - Commit：765a671
 
-- [ ] **Step 3：结构化日志**
+- [x] **Step 3：结构化日志**
   - 对应需求：R2
   - 修改文件：`app/logging_setup.py`
   - 单元测试：`tests/test_logging.py::test_record_has_required_fields`、`::test_error_goes_to_error_dir_with_stack`、`::test_secret_never_in_log`、`::test_request_id_propagates`、`::test_step_logger_records_start_end_count_elapsed`
-  - Commit：
+  - Commit：d97b43d
 
-- [ ] **Step 4：HTTP 公共层**
+- [x] **Step 4：HTTP 公共层**
   - 对应需求：R2、R3
   - 修改文件：`app/clients/http.py`
   - 单元测试：`tests/test_http.py::test_400_401_402_no_retry`、`::test_429_5xx_backoff_max_retries`、`::test_timeout_raises_typed_error`、`::test_log_has_method_url_status_elapsed_without_key`、`::test_call_counter`
   - 说明：退避的等待函数可注入，测试中不真实等待
-  - Commit：
+  - Commit：5a06776
 
-- [ ] **Step 5：接口检查（命令行 + 网页"接口检查"页）**
+- [x] **Step 5：接口检查（命令行 + 网页"接口检查"页）**
   - 对应需求：R14、R13（部分）
   - 修改文件：`app/diag.py` `app/clients/xhs.py`（最小搜索调用） `app/clients/llm.py`（最小调用） `app/clients/image.py`（最小调用） `app/ui/pages/0_接口检查.py`
   - 单元测试：`tests/test_diag.py::test_all_success`、`::test_partial_failure_reports_status_and_elapsed`、`::test_raw_saved_masked`、`::test_no_secret_in_output`；`tests/test_ui_diag.py::test_page_renders_three_checks`（Streamlit AppTest，diag 模拟）
-  - Commit：
+  - Commit：7a27531
 
 **🔍 第 1 轮测试（你来）**：打开"接口检查"页，依次点 3 个按钮，看是否都显示成功。
 **我随后做**：读取 `文稿/光明demo/logs/diag/` 中的脱敏响应，确认聚道云数据结构（含是否有广告字段）、生图调用方式，据此生成第 2、5 轮的测试数据。
