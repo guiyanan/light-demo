@@ -1,0 +1,14 @@
+.git
+.github
+.env
+logs
+data
+tests
+docs
+.venv
+venv
+**/__pycache__
+.pytest_cache
+.ruff_cache
+项目进度.md
+start.command

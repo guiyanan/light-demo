@@ -1,0 +1,23 @@
+# 密钥：只放在本地 .env，永不提交
+.env
+!.env.example
+
+# 运行产物
+logs/
+data/runs/
+data/cache/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.venv/
+venv/
+
+# 系统文件 / 本地说明
+.DS_Store
+项目进度.md

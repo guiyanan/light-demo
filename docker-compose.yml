@@ -1,0 +1,14 @@
+services:
+  web:
+    build: .
+    image: light-demo:latest
+    container_name: light-demo
+    ports:
+      - "8501:8501"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: "no"
