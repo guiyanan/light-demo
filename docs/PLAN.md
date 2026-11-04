@@ -73,11 +73,12 @@
 
 ## 第 2 轮：数据抓取
 
-- [ ] **Step 6：搜索笔记解析 + 广告标注 + 隐私过滤**
+- [x] **Step 6：搜索笔记解析 + 广告标注 + 隐私过滤**
   - 对应需求：R4、R5、R7
   - 修改文件：`app/clients/xhs.py` `tests/fixtures/xhs/search_*.json`（基于第 1 轮真实响应脱敏）
   - 单元测试：`tests/test_xhs_search.py::test_parse_real_structure`、`::test_keep_api_order_and_rank`、`::test_stop_at_10`、`::test_stop_when_no_more`、`::test_multi_keyword_round_robin_dedupe`、`::test_keyword_count_1_to_3`、`::test_ad_flag`、`::test_no_ad_field_defaults_false_and_logs`、`::test_no_user_identity_fields`
-  - Commit：
+  - 说明：广告标记来自笔记 widgets_context 的 order_cooperate / commercial_bridge_note（商业合作笔记）；原始响应保存前去除身份信息
+  - Commit：a272614
 
 - [ ] **Step 7：评论抓取 + 每篇取点赞最高 2 条**
   - 对应需求：R6、R7
