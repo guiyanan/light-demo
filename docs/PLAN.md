@@ -93,11 +93,11 @@
   - 单元测试：`tests/test_runs.py::test_save_layout`（raw/、notes.jsonl、comments.jsonl、stats.json）、`::test_load_roundtrip`、`::test_list_runs_newest_first`、`::test_load_makes_zero_api_calls`
   - Commit：d8e0c42
 
-- [ ] **Step 9：网页"①数据抓取"页**
+- [x] **Step 9：网页"①数据抓取"页**
   - 对应需求：R13、R5、R15
   - 修改文件：`app/ui/pages/1_数据抓取.py` `app/pipeline/runs.py`（新增 collect_and_save：检查配置 → 抓取 → 保存，供网页一次调用） `app/ui/streamlit_app.py`（首页菜单说明）
   - 单元测试：`tests/test_ui_collect.py::test_input_keywords_and_run`、`::test_ad_label_shown`、`::test_select_history_run`、`::test_error_shows_summary_request_id_and_retry`（pipeline 全部模拟）；`tests/test_runs.py::test_collect_and_save`、`::test_collect_and_save_requires_xhs_config`
-  - Commit：
+  - Commit：faae8bb
 
 **🔍 第 2 轮测试（你来）**：输入"低温酸奶"点抓取，检查是否有 10 篇笔记、20 条评论、广告是否标注；再从历史记录里选刚才那次，确认能直接打开。
 
