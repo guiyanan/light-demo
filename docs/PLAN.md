@@ -80,11 +80,12 @@
   - 说明：广告标记来自笔记 widgets_context 的 order_cooperate / commercial_bridge_note（商业合作笔记）；原始响应保存前去除身份信息
   - Commit：a272614
 
-- [ ] **Step 7：评论抓取 + 每篇取点赞最高 2 条**
+- [x] **Step 7：评论抓取 + 每篇取点赞最高 2 条**
   - 对应需求：R6、R7
   - 修改文件：`app/clients/xhs.py` `app/pipeline/collect.py` `tests/fixtures/xhs/comments_*.json`
   - 单元测试：`tests/test_collect.py::test_top2_by_likes_per_note`、`::test_fewer_than_2_comments`、`::test_total_at_most_20`、`::test_one_page_per_note`、`::test_comment_fields_no_identity`
-  - Commit：
+  - 说明：评论接口参数 sort_strategy=like_count（实测确认）；单篇失败跳过并记录，401/402 直接停止
+  - Commit：7b730cb
 
 - [ ] **Step 8：运行记录保存与读取**
   - 对应需求：R15
