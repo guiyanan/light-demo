@@ -54,17 +54,17 @@
   - 单元测试：`tests/test_diag.py::test_all_success`、`::test_partial_failure_reports_status_and_elapsed`、`::test_raw_saved_masked`、`::test_no_secret_in_output`；`tests/test_ui_diag.py::test_page_renders_three_checks`（Streamlit AppTest，diag 模拟）
   - Commit：7a27531
 
-- [ ] **Step 5a：start.command 自动让 Docker 构建走 Mac 代理（修 BUG-001）**
+- [x] **Step 5a：start.command 自动让 Docker 构建走 Mac 代理（修 BUG-001）**
   - 对应需求：R17
   - 修改文件：`scripts/docker_proxy.sh`（新增） `start.command`
   - 单元测试：`tests/test_docker_proxy.py::test_bug_docker_build_ignores_mac_proxy`、`::test_proxy_disabled_returns_empty`、`::test_remote_proxy_host_kept`、`::test_empty_input_returns_empty`、`::test_start_command_passes_proxy_build_args`
-  - Commit：
+  - Commit：2930c97
 
-- [ ] **Step 5b：接口地址格式检查（修 BUG-002）**
+- [x] **Step 5b：接口地址格式检查（修 BUG-002）**
   - 对应需求：R1、R14
   - 修改文件：`app/config.py` `app/diag.py`（接口检查时也做地址检查，直接提示） `.env.example`
   - 单元测试：`tests/test_config.py::test_bug_image_base_url_docs_page`、`::test_base_url_must_end_with_v1`、`::test_base_url_must_be_http`、`::test_valid_base_urls_pass`、`::test_empty_url_reported_as_missing_not_invalid`、`::test_env_example_shows_full_image_url`；`tests/test_diag.py::test_bad_base_url_fails_without_calling`
-  - Commit：
+  - Commit：3b06b43
 
 **🔍 第 1 轮测试（你来）**：打开"接口检查"页，依次点 3 个按钮，看是否都显示成功。
 **我随后做**：读取 `文稿/光明demo/logs/diag/` 中的脱敏响应，确认聚道云数据结构（含是否有广告字段）、生图调用方式，据此生成第 2、5 轮的测试数据。
