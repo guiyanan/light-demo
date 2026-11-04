@@ -36,6 +36,7 @@
 | `assets/logo/README.md` | 说明 logo 由客户提供 | R12 |
 | `tests/**`、`tests/fixtures/**` | 单元测试与模拟数据 | 全部 |
 | `start.command` | `git pull` + `docker compose up --build` | R17 |
+| `scripts/docker_proxy.sh` | 从 Mac 系统代理设置得出 Docker 构建用的代理地址（2026-11-04 新增：修 BUG-001，用户 Mac 开着本地代理，Docker 构建不走代理导致下载失败） | R17 |
 | `Dockerfile`、`docker-compose.yml`、`.dockerignore` | 容器化、挂载 data/logs、中文字体 | R17 |
 | `.env.example`、`.gitignore` | 配置样例与忽略规则 | R1 |
 | `requirements.txt`、`requirements-dev.txt`、`pyproject.toml` | 依赖、ruff、pytest 配置 | 2.1 |
