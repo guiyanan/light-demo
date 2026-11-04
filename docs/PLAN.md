@@ -87,11 +87,11 @@
   - 说明：评论接口参数 sort_strategy=like_count（实测确认）；单篇失败跳过并记录，401/402 直接停止
   - Commit：7b730cb
 
-- [ ] **Step 8：运行记录保存与读取**
+- [x] **Step 8：运行记录保存与读取**
   - 对应需求：R15
   - 修改文件：`app/pipeline/runs.py`
   - 单元测试：`tests/test_runs.py::test_save_layout`（raw/、notes.jsonl、comments.jsonl、stats.json）、`::test_load_roundtrip`、`::test_list_runs_newest_first`、`::test_load_makes_zero_api_calls`
-  - Commit：
+  - Commit：d8e0c42
 
 - [ ] **Step 9：网页"①数据抓取"页**
   - 对应需求：R13、R5、R15
