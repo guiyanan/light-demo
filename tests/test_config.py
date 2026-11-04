@@ -125,3 +125,59 @@ def test_repo_yaml_is_valid():
     cfg = load_config(env=FULL_ENV)
     assert (cfg.collect.max_notes, cfg.collect.comments_per_note, cfg.collect.max_comments) == (10, 2, 20)
     assert cfg.image.timeout_seconds == 180
+
+
+# ---- Step 5b：接口地址格式检查（修 BUG-002）----
+
+
+def test_bug_image_base_url_docs_page(yaml_file):
+    """BUG-002 现场：IMAGE_BASE_URL 填成了文档网页地址，应在配置检查时就报错并给出正确示例。"""
+    env = dict(FULL_ENV, IMAGE_BASE_URL="https://bananarouter.com/docs/models")
+    cfg = load_config(env=env, yaml_path=yaml_file)
+    with pytest.raises(ConfigError) as ei:
+        cfg.require("image")
+    msg = str(ei.value)
+    assert "IMAGE_BASE_URL" in msg and "/v1" in msg and "https://api.bananarouter.com/v1" in msg
+    assert ei.value.missing == []  # 不是"没填"，是"填错"
+    assert cfg.invalid("image") and not cfg.invalid("llm", "xhs")
+
+
+def test_base_url_must_end_with_v1(yaml_file):
+    env = dict(FULL_ENV, LLM_BASE_URL="https://api.kimi.com/coding")
+    cfg = load_config(env=env, yaml_path=yaml_file)
+    with pytest.raises(ConfigError, match="LLM_BASE_URL"):
+        cfg.require("llm")
+
+
+def test_base_url_must_be_http(yaml_file):
+    env = dict(FULL_ENV, IMAGE_BASE_URL="api.bananarouter.com/v1", XHS_BASE_URL="ftp://xhs.example.com")
+    cfg = load_config(env=env, yaml_path=yaml_file)
+    with pytest.raises(ConfigError, match="IMAGE_BASE_URL"):
+        cfg.require("image")
+    with pytest.raises(ConfigError, match="XHS_BASE_URL"):
+        cfg.require("xhs")
+
+
+def test_valid_base_urls_pass(yaml_file):
+    env = dict(
+        FULL_ENV,
+        XHS_BASE_URL="https://api.cn8n.com",  # 聚道云不要求 /v1
+        LLM_BASE_URL="https://api.kimi.com/coding/v1/",  # 结尾斜杠会被去掉
+        IMAGE_BASE_URL="https://api.bananarouter.com/v1",
+    )
+    cfg = load_config(env=env, yaml_path=yaml_file)
+    assert cfg.invalid("xhs", "llm", "image") == []
+    cfg.require("xhs", "llm", "image")
+
+
+def test_empty_url_reported_as_missing_not_invalid(yaml_file):
+    cfg = load_config(env=dict(FULL_ENV, IMAGE_BASE_URL=""), yaml_path=yaml_file)
+    assert cfg.invalid("image") == []
+    with pytest.raises(ConfigError) as ei:
+        cfg.require("image")
+    assert ei.value.missing == ["IMAGE_BASE_URL"]
+
+
+def test_env_example_shows_full_image_url():
+    text = (Path(__file__).resolve().parents[1] / ".env.example").read_text(encoding="utf-8")
+    assert "https://api.bananarouter.com/v1" in text

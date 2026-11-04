@@ -27,6 +27,13 @@ SERVICE_ENV = {
 }
 SERVICE_LABEL = {"xhs": "聚道云（小红书）", "llm": "Kimi（文本）", "image": "BananaRouter（生图）"}
 
+# 服务名 → (地址变量, 是否要求以 /v1 结尾, 正确示例)（BUG-002）
+SERVICE_URL = {
+    "xhs": ("XHS_BASE_URL", False, "https://api.cn8n.com"),
+    "llm": ("LLM_BASE_URL", True, "https://api.kimi.com/coding/v1"),
+    "image": ("IMAGE_BASE_URL", True, "https://api.bananarouter.com/v1"),
+}
+
 
 class ConfigError(Exception):
     """配置缺失或格式错误。`missing` 为缺少的字段名列表。"""
@@ -106,12 +113,31 @@ class AppConfig:
             out += [k for k in SERVICE_ENV[svc] if not self.env_values.get(k, "").strip()]
         return out
 
+    def invalid(self, *services: str) -> list[str]:
+        """返回指定服务接口地址格式错误的说明（没填的地址不算，由 missing() 报告）。"""
+        out: list[str] = []
+        for svc in services:
+            if svc not in SERVICE_URL:
+                raise ValueError(f"未知服务：{svc}")
+            key, need_v1, example = SERVICE_URL[svc]
+            value = self.env_values.get(key, "").strip().rstrip("/")
+            if not value:
+                continue
+            if not value.startswith(("http://", "https://")):
+                out.append(f"{key} 应以 https:// 开头，例如 {example}（当前：{value}）")
+            elif need_v1 and not value.endswith("/v1"):
+                out.append(f"{key} 应填接口地址、以 /v1 结尾，例如 {example}（当前：{value}，像是网页地址）")
+        return out
+
     def require(self, *services: str) -> None:
         missing = self.missing(*services)
         if missing:
             raise ConfigError(
                 "缺少必填配置：" + "、".join(missing) + "（请在 .env 中填写后重新启动）", missing
             )
+        invalid = self.invalid(*services)
+        if invalid:
+            raise ConfigError("接口地址填写有误：" + "；".join(invalid) + "（请在 .env 中改正后重新启动）")
 
     def secrets(self) -> list[str]:
         return [s.api_key for s in (self.xhs, self.llm, self.image) if s.api_key]

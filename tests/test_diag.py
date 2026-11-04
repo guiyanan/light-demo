@@ -212,3 +212,13 @@ def test_cli_prints_table_and_exit_code(monkeypatch, capsys, log_dir):
     assert out.index("聚道云") < out.index("Kimi") < out.index("生图")
     assert "500" in out and "失败" in out
     assert diag.main(["--only", "xhs"]) == 0
+
+
+def test_bad_base_url_fails_without_calling(log_dir):
+    """BUG-002：地址填成文档网页时，接口检查直接提示地址错误，不发请求。"""
+    cfg = load_config(env=dict(ENV, IMAGE_BASE_URL="https://bananarouter.com/docs/models"))
+    with responses.RequestsMock() as rsps:
+        r = diag.run_check("image", cfg=cfg, diag_dir=log_dir / "diag", now=NOW, sleep=lambda s: None)
+        assert len(rsps.calls) == 0
+    assert not r.ok and r.error_type == "config_invalid"
+    assert "IMAGE_BASE_URL" in r.message and "https://api.bananarouter.com/v1" in r.message
