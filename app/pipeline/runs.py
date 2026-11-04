@@ -14,12 +14,17 @@ import datetime as dt
 import json
 import logging
 import re
+import time
 import uuid
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from app.config import ROOT, AppConfig
+from app.clients.http import CallCounter
+from app.clients.xhs import XhsClient
+from app.config import ROOT, AppConfig, load_config
+from app.pipeline import collect as collect_mod
 from app.pipeline.collect import CollectResult
 
 logger = logging.getLogger(__name__)
@@ -146,3 +151,19 @@ def load_run(base_dir: Path, run_id: str) -> Run:
         raise RunNotFound(f"运行记录已损坏：{run_id}（{e}）") from e
     logger.info("读取历史运行", extra={"event": "run_loaded", "run_id": run_id, "count": len(notes)})
     return Run(run_id=run_id, path=d, notes=notes, comments=comments, stats=stats)
+
+
+def collect_and_save(
+    keywords: Iterable[str],
+    cfg: AppConfig | None = None,
+    *,
+    base_dir: Path | None = None,
+    now: dt.datetime | None = None,
+    sleep: Callable[[float], Any] = time.sleep,
+) -> str:
+    """网页「开始抓取」：检查配置 → 抓取 → 保存，返回 run_id。每次运行单独统计调用次数。"""
+    cfg = cfg or load_config()
+    cfg.require("xhs")
+    client = XhsClient(cfg, sleep=sleep, counter=CallCounter())
+    result = collect_mod.collect(client, keywords, cfg.collect)
+    return save_collect(result, Path(base_dir) if base_dir else runs_dir(cfg), now=now)

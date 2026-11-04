@@ -101,3 +101,25 @@ def test_runs_dir_from_config(tmp_path):
     cfg = load_config({})
     assert runs.runs_dir(cfg).parts[-2:] == ("data", "runs")
     assert runs.runs_dir(cfg).is_absolute()
+
+
+@responses.activate
+def test_collect_and_save(tmp_path):
+    """抓取 + 保存一步完成（网页调用）：接口模拟，结果写入指定目录。"""
+    from app.config import load_config
+    from tests.test_collect import BASE, serve_comments, serve_search
+
+    cfg = load_config({"XHS_BASE_URL": BASE, "XHS_API_KEY": "test-key-123456"})
+    serve_search()
+    serve_comments(default_likes=[3, 1, 2])
+    run_id = runs.collect_and_save(["低温酸奶"], cfg, base_dir=tmp_path, now=NOW, sleep=lambda s: None)
+    run = runs.load_run(tmp_path, run_id)
+    assert len(run.notes) == 10 and len(run.comments) == 20
+    assert run.stats["api_calls"] == {"xhs": 11}  # 每次运行单独计数
+
+
+def test_collect_and_save_requires_xhs_config(tmp_path):
+    from app.config import ConfigError, load_config
+
+    with pytest.raises(ConfigError):
+        runs.collect_and_save(["低温酸奶"], load_config({}), base_dir=tmp_path)
