@@ -21,3 +21,6 @@ venv/
 # 系统文件 / 本地说明
 .DS_Store
 项目进度.md
+
+# Claude Code 本机权限设置，不提交
+.claude/settings.local.json
