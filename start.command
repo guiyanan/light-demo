@@ -56,7 +56,20 @@ fi
     fi
   done ) &
 
+# Mac 开着代理时，让 Docker 构建也走代理（否则下载中文字体会失败，见 docs/BUGS.md BUG-001）
+PROXY="$(scutil --proxy 2>/dev/null | bash scripts/docker_proxy.sh)"
+if [ -n "$PROXY" ]; then
+  say "检测到系统代理，构建时使用：$PROXY"
+  docker compose build --build-arg HTTP_PROXY="$PROXY" --build-arg HTTPS_PROXY="$PROXY" 2>&1 | tee -a "$LOG"
+else
+  docker compose build 2>&1 | tee -a "$LOG"
+fi
+if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+  say "❌ 构建失败，详见 $LOG"
+  pause_exit 1
+fi
+
 say "网页地址：http://localhost:8501 （关闭本窗口或按 Ctrl+C 即可停止）"
-docker compose up --build 2>&1 | tee -a "$LOG"
+docker compose up 2>&1 | tee -a "$LOG"
 say "===== 已停止 $(date) ====="
 pause_exit 0
