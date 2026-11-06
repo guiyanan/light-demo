@@ -1,8 +1,8 @@
 # 修改范围：光明乳业 · 小红书洞察驱动的新品概念生成 Demo
 
 > 仓库：https://github.com/guiyanan/light-demo
-> 状态：**草稿，待确认**（2026-11-04）
-> 依据：`docs/REQUIREMENTS.md` v1.3（第 3 轮更新：Kimi 接口说明、测试样本、jsonschema 依赖、BUG-004 涉及 `app/clients/xhs.py` 错误提示）
+> 状态：**已完成**——6 轮全部通过用户验收（2026-11-06）；初稿 2026-11-04
+> 依据：`docs/REQUIREMENTS.md` v1.5（第 3 轮更新：Kimi 接口说明、测试样本、jsonschema 依赖、BUG-004 涉及 `app/clients/xhs.py` 错误提示；第 4 轮：竞品名单配置；第 6 轮：导出模块与模板）
 > 规则：开发中如需改动本文件未列出的内容，先更新 SCOPE.md 并写明理由，再动手。
 
 ---
