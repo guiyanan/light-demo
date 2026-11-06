@@ -142,12 +142,12 @@
   - 单元测试：`tests/test_ui_insight.py::test_five_needs_with_quotes_rendered`、`::test_error_and_retry`、`::test_ad_quote_labeled`
   - Commit：347b945
 
-- [ ] **Step 12a：聚道云故障时给出明确提示，修 BUG-004**
+- [x] **Step 12a：聚道云故障时给出明确提示，修 BUG-004**
   - 对应需求：R13（失败显示原因）
   - 问题：聚道云把自己上游的 402 包装成 502「下游系统调用失败」，页面只显示「接口服务端出错」，用户看不出原因
   - 修改文件：`app/clients/xhs.py` `docs/BUGS.md`
   - 单元测试：`tests/test_xhs_search.py::test_bug_juhe_upstream_failure_hint`
-  - Commit：
+  - Commit：78a5be0
 
 **🔍 第 3 轮测试（你来）**：点"提炼需求"，看 5 条需求是否合理，原话能否在笔记或评论里找到。
 
