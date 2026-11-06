@@ -99,6 +99,12 @@
   - 单元测试：`tests/test_ui_collect.py::test_input_keywords_and_run`、`::test_ad_label_shown`、`::test_select_history_run`、`::test_error_shows_summary_request_id_and_retry`（pipeline 全部模拟）；`tests/test_runs.py::test_collect_and_save`、`::test_collect_and_save_requires_xhs_config`
   - Commit：faae8bb
 
+- [x] **Step 9a：按点赞排序返回空页时改用默认排序（修 BUG-003）**
+  - 对应需求：R6
+  - 修改文件：`app/clients/xhs.py` `app/pipeline/collect.py`
+  - 单元测试：`tests/test_collect.py::test_bug_like_count_empty_page_falls_back_to_default`、`::test_empty_page_without_comments_no_fallback`
+  - Commit：d0dfd3b
+
 **🔍 第 2 轮测试（你来）**：输入"低温酸奶"点抓取，检查是否有 10 篇笔记、20 条评论、广告是否标注；再从历史记录里选刚才那次，确认能直接打开。
 
 ---

@@ -213,3 +213,55 @@ def test_quota_error_stops_whole_collect(client, cfg):
     with pytest.raises(xhs.ApiError) as e:
         collect.collect(client, ["低温酸奶"], cfg.collect)
     assert e.value.error_type == "quota_exceeded"
+
+
+# ---------------- BUG-003：按点赞排序时接口返回空页 ----------------
+def empty_like_count_page(note_id: str, l1: int) -> dict:
+    """真实情况：sort_strategy=like_count 时 comments 为空，但 comment_count_l1 > 0。"""
+    data = comments_page(note_id, [])
+    data["data"]["result"]["list"].update(comment_count_l1=l1, has_more=False)
+    return data
+
+
+def serve_bug_comments(empty_notes: dict[str, int]):
+    """empty_notes：{note_id: comment_count_l1}，这些笔记按点赞排序时返回空页，默认排序时返回评论。"""
+    calls: list[dict] = []
+
+    def cb(request):
+        q = {k: v[0] for k, v in parse_qs(urlparse(request.url).query).items()}
+        calls.append(q)
+        nid = q["note_id"]
+        if nid in empty_notes and q.get("sort_strategy") == "like_count":
+            body = empty_like_count_page(nid, empty_notes[nid])
+        else:
+            body = comments_page(nid, [1, 0, 6, 3])
+        return 200, JSON_HEADERS, json.dumps(body, ensure_ascii=False)
+
+    responses.add_callback(responses.GET, COMMENTS_URL, callback=cb)
+    return calls
+
+
+@responses.activate
+def test_bug_like_count_empty_page_falls_back_to_default(client, cfg):
+    serve_search()
+    note_ids = [it["note"]["id"] for it in load("search_page1.json")["data"]["result"]["list"]["items"][:10]]
+    target = note_ids[6]
+    calls = serve_bug_comments({target: 7})
+    res = collect.collect(client, ["低温酸奶"], cfg.collect)
+    got = [c["likes"] for c in res.comments if c["note_id"] == target]
+    assert got == [6, 3]  # 改用默认排序后，自己按点赞取前 2 条
+    sorts = [c.get("sort_strategy") for c in calls if c["note_id"] == target]
+    assert sorts == ["like_count", "default"]
+    assert len(res.comments) == 20
+    assert res.stats["api_calls"] == {"xhs": 12}
+    assert res.stats["points"] == 240
+
+
+@responses.activate
+def test_empty_page_without_comments_no_fallback(client, cfg):
+    serve_search()
+    note_ids = [it["note"]["id"] for it in load("search_page1.json")["data"]["result"]["list"]["items"][:10]]
+    calls = serve_bug_comments({note_ids[0]: 0})  # 笔记本来就没有评论
+    res = collect.collect(client, ["低温酸奶"], cfg.collect)
+    assert [c.get("sort_strategy") for c in calls if c["note_id"] == note_ids[0]] == ["like_count"]
+    assert not [c for c in res.comments if c["note_id"] == note_ids[0]]

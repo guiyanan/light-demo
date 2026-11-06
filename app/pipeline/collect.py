@@ -13,7 +13,9 @@ from typing import Any
 from app.clients.http import ApiError, AuthError, QuotaError
 from app.clients.xhs import (
     COMMENT_SORT_BY_LIKES,
+    COMMENT_SORT_DEFAULT,
     XhsClient,
+    comment_count_l1,
     consumed_points,
     parse_comments,
     scrub_identity,
@@ -58,11 +60,21 @@ def collect(client: XhsClient, keywords: Iterable[str], cfg: CollectConfig) -> C
             remaining = cfg.max_comments - len(res.comments)
             if remaining <= 0:
                 break
+            pages: list[Any] = []
             try:
-                data = client.get_note_comments_raw(
-                    note["note_id"], xsec_token=note.get("xsec_token") or None, sort_strategy=COMMENT_SORT_BY_LIKES
-                ).data
-                parsed = parse_comments(data, note["note_id"])
+                for sort in (COMMENT_SORT_BY_LIKES, COMMENT_SORT_DEFAULT):
+                    data = client.get_note_comments_raw(
+                        note["note_id"], xsec_token=note.get("xsec_token") or None, sort_strategy=sort
+                    ).data
+                    pages.append(data)
+                    parsed = parse_comments(data, note["note_id"])
+                    if parsed or sort != COMMENT_SORT_BY_LIKES or comment_count_l1(data) <= 0:
+                        break
+                    # BUG-003：按点赞排序返回空页但笔记有评论 → 改用默认排序，再自己按点赞取前几条
+                    logger.warning(
+                        f"笔记 {note['note_id']} 按点赞排序返回空页（实际有 {comment_count_l1(data)} 条评论），改用默认排序",
+                        extra={"event": "comment_sort_fallback", "note_id": note["note_id"]},
+                    )
             except FATAL_ERRORS:
                 raise
             except ApiError as err:
@@ -74,8 +86,9 @@ def collect(client: XhsClient, keywords: Iterable[str], cfg: CollectConfig) -> C
                 )
                 errors.append({"note_id": note["note_id"], "error": str(err)})
                 continue
-            res.raw.append({"kind": "comments", "note_id": note["note_id"], "response": scrub_identity(data)})
-            points += consumed_points(data)
+            for data in pages:
+                res.raw.append({"kind": "comments", "note_id": note["note_id"], "response": scrub_identity(data)})
+                points += consumed_points(data)
             res.comments.extend(top_comments(parsed, min(cfg.comments_per_note, remaining)))
         step.count = len(res.comments)
 
