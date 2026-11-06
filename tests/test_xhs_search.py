@@ -236,3 +236,21 @@ def test_scrub_identity_handles_widgets_context_and_mentions():
     assert json.loads(out["note"]["widgets_context"]) == {"order_cooperate": True}
     assert out["comments"][0]["content"] == "好吃"
     assert data["comments"][0]["content"] == "@李 四 好吃"  # 不修改原对象
+
+
+# ---------------- BUG-004 ----------------
+@responses.activate
+def test_bug_juhe_upstream_failure_hint(client):
+    """聚道云把上游 402 包装成 502「下游系统调用失败」：页面提示要让用户知道去后台看「上游状态」并稍后重试。"""
+    body = {"code": 502, "message": "下游系统调用失败", "data": {"requestId": "c15c1335855643199242487d51b9715b"}}
+    responses.add(responses.GET, SEARCH_URL, body=json.dumps(body, ensure_ascii=False), status=502,
+                  content_type="application/json")  # 与真实响应一致：中文不转义
+    with pytest.raises(xhs.ApiError) as ei:
+        client.search_notes_raw("低温酸奶")
+    err = ei.value
+    assert err.status_code == 502 and err.retryable  # 仍按 5xx 重试
+    assert len(responses.calls) == 4  # 1 次 + 重试 3 次
+    s = err.summary()
+    assert "聚道云调用失败" in s and "上游状态" in s and "重试" in s
+    assert "接口服务端出错" not in s
+    assert "下游系统调用失败" in str(err)  # 原始报错保留，方便查日志
