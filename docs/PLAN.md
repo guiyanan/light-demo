@@ -1,21 +1,21 @@
 # 方案文档：光明乳业 · 小红书洞察驱动的新品概念生成 Demo
 
-> 状态：**草稿，待确认**（2026-11-04）
-> 依据：`docs/REQUIREMENTS.md` v1.4、`docs/SCOPE.md`
+> 状态：**已完成**——Step 1–19 全部勾选，6 轮全部通过用户真实接口验收（2026-11-06）；初稿 2026-11-04
+> 依据：`docs/REQUIREMENTS.md` v1.5、`docs/SCOPE.md`
 > 每个 Step 的规则：先写测试（红）→ 写代码（绿）→ 全量测试（输出存 `logs/test/`）→ Code Review → commit/push → CI 绿灯，全部满足才能勾选。方案变更先改本文件。
 > 每**轮**结束后：用户在访达里双击 `start.command`，在网页上用真实接口测试；**用户确认没问题后才进入下一轮**。发现问题按 bug 流程处理：先写复现测试 → 修复 → 记入 `docs/BUGS.md`。
 > 所有外部接口在单元测试中一律模拟；测试不依赖网络、随机数、当前时间和执行顺序。
 
 ## 总览
 
-| 轮次 | Step | 本轮结束后你在网页上测什么 |
-|---|---|---|
-| 1 基础 + 接口检查 | 1–5 | 接口检查页：3 个接口是否连通 |
-| 2 数据抓取 | 6–9 | 输入关键词 → 10 篇笔记 + 20 条评论，广告有标注；可选历史结果 |
-| 3 需求洞察 | 10–12 | 5 条需求 + 原话证据 |
-| 4 新品概念 | 13–14 | 3 个概念卡片 |
-| 5 产品图 | 15–17 | 3 张合成图 |
-| 6 导出 | 18–19 | 下载报告和图片 |
+| 轮次 | Step | 本轮结束后你在网页上测什么 | 验收 |
+|---|---|---|---|
+| 1 基础 + 接口检查 | 1–5 | 接口检查页：3 个接口是否连通 | ✅ |
+| 2 数据抓取 | 6–9 | 输入关键词 → 10 篇笔记 + 评论，广告有标注；可选历史结果 | ✅ |
+| 3 需求洞察 | 10–12 | 5 条需求 + 原话证据 | ✅ 2026-11-05 |
+| 4 新品概念 | 13–14 | 3 个概念卡片 | ✅ 2026-11-05 |
+| 5 产品图 | 15–17 | 3 张合成图 | ✅ 2026-11-06 |
+| 6 导出 | 18–19 | 下载报告和图片 | ✅ 2026-11-06 |
 
 ---
 
@@ -205,13 +205,13 @@
   - 单元测试：`tests/test_export.py::test_report_contains_needs_quotes_concepts`、`::test_images_embedded`、`::test_ad_label_in_report`、`::test_zip_contains_cards_and_raw`、`::test_no_user_identity_or_links`、`::test_failed_image_still_exports`、`::test_missing_steps_rejected`、`::test_print_one_concept_per_page`、`::test_html_escaped`、`::test_export_and_save`
   - Commit：5d6cfb7（PR #23）
 
-- [ ] **Step 19：导出按钮 + 端到端测试 + README 收尾**
+- [x] **Step 19：导出按钮 + 端到端测试 + README 收尾**
   - 对应需求：S1–S7
   - 修改文件：`app/ui/pages/4_产品图与导出.py` `app/ui/streamlit_app.py` `tests/test_e2e.py` `README.md`
   - 单元测试：`tests/test_e2e.py::test_full_flow_mocked`（模拟 3 个接口：抓取 → 5 条需求 → 3 个概念 → 3 张图 → 导出）；`tests/test_ui_export.py::test_download_buttons`、`::test_export_warns_failed_image`
-  - Commit：
+  - Commit：49fdd35（PR #24）
 
-**🔍 第 6 轮测试（你来）**：下载报告，用浏览器打开并打印成 PDF，检查内容是否完整；下载图片压缩包。
+**🔍 第 6 轮测试（你来）**：下载报告，用浏览器打开并打印成 PDF，检查内容是否完整；下载图片压缩包。✅ 用户 2026-11-06 验收通过
 
 ---
 
