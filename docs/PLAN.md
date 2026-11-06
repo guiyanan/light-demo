@@ -123,11 +123,11 @@
 
 ## 第 3 轮：需求洞察
 
-- [ ] **Step 10：大模型客户端（JSON 输出、校验、重试、缓存）**
+- [x] **Step 10：大模型客户端（JSON 输出、校验、重试、缓存）**
   - 对应需求：R8a（基础）
   - 修改文件：`app/clients/llm.py` `app/pipeline/schemas.py` `requirements.txt`（加 jsonschema）
   - 单元测试：`tests/test_llm.py::test_json_schema_ok`、`::test_invalid_json_retry_once_then_error`、`::test_cache_by_content_hash`、`::test_base_url_model_configurable`、`::test_json_in_code_fence_parsed`
-  - Commit：
+  - Commit：686e83a
 
 - [ ] **Step 11：提炼 5 条需求 + 原话真实性校验**
   - 对应需求：R8a、R8b
