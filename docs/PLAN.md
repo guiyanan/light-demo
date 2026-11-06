@@ -111,13 +111,13 @@
   - 单元测试：`tests/test_collect.py::test_pick_notes_by_comment_count`、`::test_pick_notes_min_comments_threshold`、`::test_pick_notes_tie_keeps_search_order`、`::test_search_40_candidates`
   - Commit：7c35df6
 
-- [ ] **Step 9c：每篇保留整页评论 + 过滤水评论**（需求 v1.2，用户 2026-11-05 确认）
+- [x] **Step 9c：每篇保留整页评论 + 过滤水评论**（需求 v1.2，用户 2026-11-05 确认）
   - 对应需求：R6
   - 修改文件：`config/app.yaml` `app/pipeline/collect.py` `app/clients/xhs.py`
   - 单元测试：`tests/test_collect.py::test_is_junk_comment`、`::test_keep_whole_page_sorted_by_likes`、`::test_junk_filtered_and_counted`
-  - Commit：
+  - Commit：4aa06fe
 
-**🔍 第 2 轮测试（你来）**：输入"低温酸奶"点抓取，检查是否有 10 篇笔记、20 条评论、广告是否标注；再从历史记录里选刚才那次，确认能直接打开。
+**🔍 第 2 轮测试（你来）**：输入"低温酸奶"点抓取，检查是否有 10 篇讨论较多的笔记、评论是否比之前更有内容（水评论已去掉）、广告是否标注；再从历史记录里选刚才那次，确认能直接打开。
 
 ---
 
