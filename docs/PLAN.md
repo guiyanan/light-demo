@@ -186,12 +186,12 @@
   - 单元测试：`tests/test_render.py::test_canvas_1600x1000`、`::test_rendered_text_equals_concept_data`、`::test_cjk_font_available`、`::test_watermark_present`、`::test_logo_slot_reserved_empty`、`::test_failed_image_uses_gray_placeholder`
   - Commit：741a605
 
-- [ ] **Step 17：网页"④产品图"页**
+- [x] **Step 17：网页"④产品图"页**
   - 对应需求：R13
   - 修改文件：`app/ui/pages/4_产品图与导出.py` `app/pipeline/runs.py`（3 张同时生成、保存、单张重画） `app/ui/streamlit_app.py`（首页使用说明）
   - 说明（2026-11-05 用户确认）：3 张同时画；失败的用灰色占位图并可单张重试；画好的保存在 `data/runs/<run_id>/images/`，再打开不重复调用
   - 单元测试：`tests/test_images_run.py::test_three_generated_in_parallel_and_saved`、`::test_failure_uses_placeholder_others_ok`、`::test_only_regenerates_selected`、`::test_load_images_no_api_calls`；`tests/test_ui_image.py::test_three_images_shown`、`::test_single_image_retry`、`::test_concepts_missing_hint`
-  - Commit：
+  - Commit：20a9f4d
 
 **🔍 第 5 轮测试（你来）**：点"生成图片"，检查 3 张图：包装上没有乱字，右侧文字和概念一致，失败时显示灰色占位图和重试按钮。
 
