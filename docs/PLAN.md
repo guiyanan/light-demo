@@ -155,12 +155,12 @@
 
 ## 第 4 轮：新品概念
 
-- [ ] **Step 13：生成 3 个新品概念**
+- [x] **Step 13：生成 3 个新品概念**
   - 对应需求：R9
   - 修改文件：`app/pipeline/concept.py` `app/pipeline/schemas.py` `app/pipeline/runs.py`（保存 / 读取 concepts.json） `app/config.py` `config/app.yaml`（竞品名单）
   - 输入：第②步需求 + 原话；不出现竞品名；3 个概念主需求各不相同（需求 v1.4）
   - 单元测试：`tests/test_concept.py::test_three_concepts_schema_valid`、`::test_need_ids_within_1_to_5`、`::test_nutrition_marked_ai_estimate`、`::test_image_prompt_present`、`::test_input_includes_needs_and_quotes`、`::test_competitor_names_retry_then_warn`、`::test_primary_needs_distinct`、`::test_concepts_saved_and_loaded`
-  - Commit：
+  - Commit：667a02a
 
 - [ ] **Step 14：网页"③新品概念"页**
   - 对应需求：R13
