@@ -58,6 +58,8 @@ class CollectConfig:
     comments_per_note: int
     max_comments: int
     default_keywords: list[str]
+    candidate_notes: int = 40  # R4 v1.2：先取这么多篇候选
+    min_note_comments: int = 3  # 评论数少于这个的笔记不要
 
 
 @dataclass(frozen=True)
@@ -232,6 +234,8 @@ def load_config(env: Mapping[str, str] | None = None, yaml_path: Path | str | No
             comments_per_note=int(_get(data, "collect.comments_per_note")),
             max_comments=int(_get(data, "collect.max_comments")),
             default_keywords=list(_get(data, "collect.default_keywords")),
+            candidate_notes=int(data["collect"].get("candidate_notes", 40)),
+            min_note_comments=int(data["collect"].get("min_note_comments", 3)),
         ),
         http=HttpConfig(
             max_retries=max_retries,

@@ -64,8 +64,34 @@ def client(cfg, counter):
     return XhsClient(cfg, sleep=lambda s: None, counter=counter)
 
 
+# 按 R4（v1.2）从测试数据 20 篇候选中挑出的 10 篇：评论数 ≥3、从多到少，同数保持搜索顺序
+PICKED = [
+    "6a20c1730000000036002642",  # 121
+    "6ad5d303000000001e026335",  # 82
+    "6a44c674000000000803e588",  # 60
+    "6a25829b0000000006034e50",  # 53
+    "698ac6e70000000009039cb4",  # 32
+    "6a96a5bb000000001001d674",  # 22
+    "6abced55000000001b01c323",  # 13（搜索第 3 位）
+    "69e861ff0000000021013193",  # 13（搜索第 17 位）
+    "69c63b94000000001a02c84b",  # 10
+    "6ae1c4b0000000002303014e",  # 9
+]
+
+
 def serve_search(page: dict | None = None):
-    responses.add(responses.GET, SEARCH_URL, json=page or load("search_page1.json"))
+    """第 1 页返回测试数据，之后的页为空（没有更多结果）。记录请求的页码。"""
+    pages: list[int] = []
+    first = page or load("search_page1.json")
+
+    def cb(request):
+        n = int(parse_qs(urlparse(request.url).query)["page"][0])
+        pages.append(n)
+        body = first if n == 1 else {**first, "data": {**first["data"], "result": {"list": {"items": []}}}}
+        return 200, JSON_HEADERS, json.dumps(body, ensure_ascii=False)
+
+    responses.add_callback(responses.GET, SEARCH_URL, callback=cb)
+    return pages
 
 
 def serve_comments(by_note: dict[str, dict] | None = None, default_likes: list[int] | None = None):
@@ -127,21 +153,21 @@ def test_top2_from_api_page(client, cfg):
     serve_comments(default_likes=[0, 7, 2, 9, 1])
     res = collect.collect(client, ["低温酸奶"], cfg.collect)
     first = [c for c in res.comments if c["note_id"] == res.notes[0]["note_id"]]
-    assert [c["likes"] for c in first] == [9, 7]
+    assert [c["likes"] for c in first] == [9, 7, 2, 1, 0]  # v1.2：整页保留，按点赞排序
 
 
 @responses.activate
 def test_fewer_than_2_comments(client, cfg):
     serve_search()
-    note_ids = [it["note"]["id"] for it in load("search_page1.json")["data"]["result"]["list"]["items"][:10]]
+    note_ids = PICKED
     serve_comments({note_ids[0]: comments_page(note_ids[0], [4]), note_ids[1]: comments_page(note_ids[1], [])},
                    default_likes=[1, 2, 3])
     res = collect.collect(client, ["低温酸奶"], cfg.collect)
     per = {nid: [c for c in res.comments if c["note_id"] == nid] for nid in note_ids}
     assert len(per[note_ids[0]]) == 1
     assert len(per[note_ids[1]]) == 0
-    assert all(len(per[n]) == 2 for n in note_ids[2:])
-    assert res.stats["comments"] == 17
+    assert all(len(per[n]) == 3 for n in note_ids[2:])
+    assert res.stats["comments"] == 25
 
 
 @responses.activate
@@ -150,7 +176,7 @@ def test_total_at_most_20(client, cfg):
     serve_comments(default_likes=[5, 4, 3, 2, 1])
     res = collect.collect(client, ["低温酸奶"], cfg.collect)
     assert len(res.notes) == 10
-    assert len(res.comments) == 20
+    assert len(res.comments) == 50
     small = CollectConfig(max_notes=10, comments_per_note=2, max_comments=7, default_keywords=[])
     res2 = collect.collect(client, ["低温酸奶"], small)
     assert len(res2.comments) == 7
@@ -166,9 +192,9 @@ def test_one_page_per_note(client, cfg, counter):
     assert all(c["sort_strategy"] == "like_count" for c in calls)
     assert all(c.get("xsec_token", "").startswith("FAKE_XSEC_") for c in calls)
     assert all("cursor" not in c for c in calls)
-    assert counter.get("xhs") == 11  # 1 次搜索 + 10 次评论
-    assert res.stats["api_calls"] == {"xhs": 11}
-    assert res.stats["points"] == 220
+    assert counter.get("xhs") == 12  # 2 次搜索（第 2 页为空）+ 10 次评论
+    assert res.stats["api_calls"] == {"xhs": 12}
+    assert res.stats["points"] == 240
 
 
 @responses.activate
@@ -189,7 +215,7 @@ def test_comment_fields_no_identity(client, cfg):
 @responses.activate
 def test_comment_failure_on_one_note_continues(client, cfg):
     serve_search()
-    note_ids = [it["note"]["id"] for it in load("search_page1.json")["data"]["result"]["list"]["items"][:10]]
+    note_ids = PICKED
     calls: list[str] = []
 
     def cb(request):
@@ -244,24 +270,113 @@ def serve_bug_comments(empty_notes: dict[str, int]):
 @responses.activate
 def test_bug_like_count_empty_page_falls_back_to_default(client, cfg):
     serve_search()
-    note_ids = [it["note"]["id"] for it in load("search_page1.json")["data"]["result"]["list"]["items"][:10]]
+    note_ids = PICKED
     target = note_ids[6]
     calls = serve_bug_comments({target: 7})
     res = collect.collect(client, ["低温酸奶"], cfg.collect)
     got = [c["likes"] for c in res.comments if c["note_id"] == target]
-    assert got == [6, 3]  # 改用默认排序后，自己按点赞取前 2 条
+    assert got == [6, 3, 1, 0]  # 改用默认排序后，自己按点赞排序
     sorts = [c.get("sort_strategy") for c in calls if c["note_id"] == target]
     assert sorts == ["like_count", "default"]
-    assert len(res.comments) == 20
-    assert res.stats["api_calls"] == {"xhs": 12}
-    assert res.stats["points"] == 240
+    assert len(res.comments) == 40
+    assert res.stats["api_calls"] == {"xhs": 13}
+    assert res.stats["points"] == 260
 
 
 @responses.activate
 def test_empty_page_without_comments_no_fallback(client, cfg):
     serve_search()
-    note_ids = [it["note"]["id"] for it in load("search_page1.json")["data"]["result"]["list"]["items"][:10]]
+    note_ids = PICKED
     calls = serve_bug_comments({note_ids[0]: 0})  # 笔记本来就没有评论
     res = collect.collect(client, ["低温酸奶"], cfg.collect)
     assert [c.get("sort_strategy") for c in calls if c["note_id"] == note_ids[0]] == ["like_count"]
     assert not [c for c in res.comments if c["note_id"] == note_ids[0]]
+
+
+# ---------------- Step 9b：候选 40 篇，按评论数挑 10 篇（R4 v1.2） ----------------
+def _note(nid: str, comments: int, rank: int) -> dict:
+    return {"note_id": nid, "comments": comments, "rank": rank, "keyword": "k"}
+
+
+def test_pick_notes_by_comment_count():
+    cands = [_note(f"n{i}", c, i + 1) for i, c in enumerate([5, 50, 3, 20, 8])]
+    out = collect.pick_notes(cands, max_notes=3, min_comments=3)
+    assert [n["note_id"] for n in out] == ["n1", "n3", "n4"]
+    assert [n["rank"] for n in out] == [1, 2, 3]  # 重新编号
+    assert [n["search_rank"] for n in out] == [2, 4, 5]  # 保留在搜索结果中的位置
+
+
+def test_pick_notes_min_comments_threshold():
+    cands = [_note("a", 2, 1), _note("b", 3, 2), _note("c", 0, 3)]
+    out = collect.pick_notes(cands, max_notes=10, min_comments=3)
+    assert [n["note_id"] for n in out] == ["b"]  # 不足 10 篇如实返回
+
+
+def test_pick_notes_tie_keeps_search_order():
+    cands = [_note("x", 7, 1), _note("y", 9, 2), _note("z", 7, 3)]
+    out = collect.pick_notes(cands, max_notes=3, min_comments=0)
+    assert [n["note_id"] for n in out] == ["y", "x", "z"]
+
+
+@responses.activate
+def test_search_40_candidates(client, cfg):
+    assert cfg.collect.candidate_notes == 40 and cfg.collect.min_note_comments == 3
+    pages = serve_search()
+    calls = serve_comments(default_likes=[1, 2])
+    res = collect.collect(client, ["低温酸奶"], cfg.collect)
+    assert pages == [1, 2]  # 第 1 页 20 篇不够 40 篇，翻到第 2 页为空即停
+    assert [n["note_id"] for n in res.notes] == PICKED
+    assert [c["note_id"] for c in calls] == PICKED  # 只给挑中的 10 篇取评论
+    assert res.stats["candidates"] == 20
+    assert res.stats["notes"] == 10
+
+
+# ---------------- Step 9c：整页保留 + 过滤水评论（R6 v1.2） ----------------
+@pytest.mark.parametrize(
+    "text",
+    ["pm", "PM我", "dd", "[赞R][赞R]", "👍👍👍", "#活润苹果石榴轻食杯[goods]#", "亲可以代购吗",
+     "[微笑R]嗨， 我这边是达人机构的 可以建联聊一下哦[偷笑R]", "私信我", "互关互关", "好", "  "],
+)
+def test_is_junk_comment(text):
+    assert collect.is_junk(text)
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["热量多少啊", "哪里买", "太酸了", "#卡士第一款# 多少钱一瓶？", "我吃的为什么那么酸啊", "学会了",
+     "我买错了，很难吃的，正好给大家区别一下。", "希望KL有[哭惹R]", "包装太难撕了[生气R]"],
+)
+def test_not_junk_comment(text):
+    assert not collect.is_junk(text)
+
+
+def test_collect_config_v12_values(cfg):
+    assert cfg.collect.comments_per_note >= 10  # 一页约 10 条，全部保留
+    assert cfg.collect.max_comments >= cfg.collect.max_notes * 10
+
+
+@responses.activate
+def test_keep_whole_page_sorted_by_likes(client, cfg):
+    serve_search()
+    serve_comments(default_likes=[0, 7, 2, 9, 1, 3, 4, 5, 6, 8])
+    res = collect.collect(client, ["低温酸奶"], cfg.collect)
+    first = [c["likes"] for c in res.comments if c["note_id"] == PICKED[0]]
+    assert first == [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+    assert len(res.comments) == 100
+
+
+@responses.activate
+def test_junk_filtered_and_counted(client, cfg):
+    serve_search()
+    page = comments_page(PICKED[0], [5, 4, 3, 2])
+    cs = page["data"]["result"]["list"]["comments"]
+    cs[0]["content"] = "pm"
+    cs[1]["content"] = "热量多少啊"
+    cs[2]["content"] = "亲可以代购吗"
+    cs[3]["content"] = "太酸了"
+    serve_comments({PICKED[0]: page}, default_likes=[1])
+    res = collect.collect(client, ["低温酸奶"], cfg.collect)
+    first = [c["content"] for c in res.comments if c["note_id"] == PICKED[0]]
+    assert first == ["热量多少啊", "太酸了"]
+    assert res.stats["junk_comments"] == 2
+    assert res.stats["comments"] == 2 + 9
