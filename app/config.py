@@ -63,6 +63,11 @@ class CollectConfig:
 
 
 @dataclass(frozen=True)
+class ConceptConfig:
+    competitor_brands: list[str] = field(default_factory=list)  # R9 v1.4：概念里不得出现的竞品名
+
+
+@dataclass(frozen=True)
 class HttpConfig:
     max_retries: int
     backoff_base_seconds: float
@@ -99,6 +104,7 @@ class AppConfig:
     collect: CollectConfig
     http: HttpConfig
     paths: PathsConfig
+    concept: ConceptConfig = field(default_factory=ConceptConfig)
     env_values: Mapping[str, str] = field(repr=False, default_factory=dict)
 
     def __repr__(self) -> str:
@@ -236,6 +242,10 @@ def load_config(env: Mapping[str, str] | None = None, yaml_path: Path | str | No
             default_keywords=list(_get(data, "collect.default_keywords")),
             candidate_notes=int(data["collect"].get("candidate_notes", 40)),
             min_note_comments=int(data["collect"].get("min_note_comments", 3)),
+        ),
+        concept=ConceptConfig(
+            competitor_brands=[str(b).strip() for b in (data.get("concept") or {}).get("competitor_brands", [])
+                               if str(b).strip()],
         ),
         http=HttpConfig(
             max_retries=max_retries,

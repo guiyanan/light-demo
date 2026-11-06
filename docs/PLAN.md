@@ -1,7 +1,7 @@
 # 方案文档：光明乳业 · 小红书洞察驱动的新品概念生成 Demo
 
 > 状态：**草稿，待确认**（2026-11-04）
-> 依据：`docs/REQUIREMENTS.md` v1.3、`docs/SCOPE.md`
+> 依据：`docs/REQUIREMENTS.md` v1.4、`docs/SCOPE.md`
 > 每个 Step 的规则：先写测试（红）→ 写代码（绿）→ 全量测试（输出存 `logs/test/`）→ Code Review → commit/push → CI 绿灯，全部满足才能勾选。方案变更先改本文件。
 > 每**轮**结束后：用户在访达里双击 `start.command`，在网页上用真实接口测试；**用户确认没问题后才进入下一轮**。发现问题按 bug 流程处理：先写复现测试 → 修复 → 记入 `docs/BUGS.md`。
 > 所有外部接口在单元测试中一律模拟；测试不依赖网络、随机数、当前时间和执行顺序。
@@ -155,16 +155,17 @@
 
 ## 第 4 轮：新品概念
 
-- [ ] **Step 13：生成 3 个新品概念**
+- [x] **Step 13：生成 3 个新品概念**
   - 对应需求：R9
-  - 修改文件：`app/pipeline/concept.py` `app/pipeline/schemas.py`
-  - 单元测试：`tests/test_concept.py::test_three_concepts_schema_valid`、`::test_need_ids_within_1_to_5`、`::test_nutrition_marked_ai_estimate`、`::test_image_prompt_present`
-  - Commit：
+  - 修改文件：`app/pipeline/concept.py` `app/pipeline/schemas.py` `app/pipeline/runs.py`（保存 / 读取 concepts.json） `app/config.py` `config/app.yaml`（竞品名单）
+  - 输入：第②步需求 + 原话；不出现竞品名；3 个概念主需求各不相同（需求 v1.4）
+  - 单元测试：`tests/test_concept.py::test_three_concepts_schema_valid`、`::test_need_ids_within_1_to_5`、`::test_nutrition_marked_ai_estimate`、`::test_image_prompt_present`、`::test_input_includes_needs_and_quotes`、`::test_competitor_names_retry_then_warn`、`::test_primary_needs_distinct`、`::test_concepts_saved_and_loaded`
+  - Commit：667a02a
 
 - [ ] **Step 14：网页"③新品概念"页**
   - 对应需求：R13
-  - 修改文件：`app/ui/pages/3_新品概念.py`
-  - 单元测试：`tests/test_ui_concept.py::test_three_cards_all_fields`、`::test_error_and_retry`
+  - 修改文件：`app/ui/pages/3_新品概念.py` `app/ui/streamlit_app.py`（首页使用说明）
+  - 单元测试：`tests/test_ui_concept.py::test_three_cards_all_fields`、`::test_error_and_retry`、`::test_needs_missing_hint`
   - Commit：
 
 **🔍 第 4 轮测试（你来）**：点"生成概念"，看 3 个概念的字段是否齐全、内容是否和需求对得上。
