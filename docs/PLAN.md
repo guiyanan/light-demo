@@ -136,11 +136,11 @@
   - 单元测试：`tests/test_insight.py::test_five_needs_schema_valid`、`::test_quote_source_note_or_comment`、`::test_non_substring_quote_dropped_and_counted`、`::test_need_without_quotes_retry_then_flag`、`::test_fewer_than_5_returns_actual`、`::test_ads_included_and_marked`、`::test_insight_saved_and_loaded`
   - Commit：5480248
 
-- [ ] **Step 12：网页"②需求洞察"页**
+- [x] **Step 12：网页"②需求洞察"页**
   - 对应需求：R13
   - 修改文件：`app/ui/pages/2_需求洞察.py` `app/ui/streamlit_app.py`（首页使用说明）
   - 单元测试：`tests/test_ui_insight.py::test_five_needs_with_quotes_rendered`、`::test_error_and_retry`、`::test_ad_quote_labeled`
-  - Commit：
+  - Commit：347b945
 
 - [ ] **Step 12a：聚道云故障时给出明确提示，修 BUG-004**
   - 对应需求：R13（失败显示原因）
