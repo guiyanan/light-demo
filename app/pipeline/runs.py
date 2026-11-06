@@ -9,6 +9,7 @@
     concepts.json         ③新品概念结果（3 个概念 + 统计 / 提示）
     images/               ④产品图：concept_<n>_raw.<ext>（AI 效果图）、card_<n>.png（合成展示图）
     images.json           ④产品图每张的状态（成功 / 失败原因 / 编号）和调用次数
+    export/               导出的 HTML 报告和图片 zip
 读取历史运行只读本地文件，不调用任何接口。后续步骤（需求、概念、图片）在同一目录追加文件。
 """
 
@@ -361,3 +362,27 @@ def images_and_save(
     logger.info("产品图完成", extra={"event": "images_done", "elapsed_ms": round((time.perf_counter() - start) * 1000),
                                    **out["stats"]})
     return out
+
+
+# ---------------- 导出 ----------------
+def export_and_save(base_dir: Path, run_id: str) -> Any:
+    """网页「导出」：生成报告和图片 zip，同时存一份到 <run_id>/export/，返回 export.ExportResult。"""
+    from app.pipeline import export as export_mod  # export 依赖本模块的读取函数，放到函数内避免循环导入
+
+    res = export_mod.build(base_dir, run_id)
+    d = _run_path(base_dir, run_id) / "export"
+    try:
+        d.mkdir(exist_ok=True)
+        (d / res.html_name).write_text(res.html, encoding="utf-8")
+        (d / res.zip_name).write_bytes(res.zip_bytes)
+        stats_path = d.parent / "stats.json"
+        stats = json.loads(stats_path.read_text(encoding="utf-8"))
+        if "export" not in stats.setdefault("steps", []):
+            stats["steps"].append("export")
+        _write_json(stats_path, stats)
+    except (OSError, ValueError):
+        logger.exception("导出文件保存失败", extra={"event": "export_save_failed", "run_id": run_id})
+        raise
+    logger.info("导出完成", extra={"event": "export_done", "run_id": run_id, "failed": res.failed,
+                                 "path": str(d)})
+    return res

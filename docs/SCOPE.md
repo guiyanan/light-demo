@@ -28,7 +28,7 @@
 | `app/pipeline/insight.py` | 提炼 5 条需求 + 原话子串校验 | R8a R8b |
 | `app/pipeline/concept.py` | 生成 3 个概念；竞品名、需求编号、主需求重复检查 | R9 |
 | `app/pipeline/render.py` | Pillow 合成展示图 | R11 R12 |
-| `app/pipeline/export.py` `templates/report.html` | HTML 报告 + PNG zip | R16 |
+| `app/pipeline/export.py` `app/pipeline/templates/report.html` | 单文件 HTML 报告（图片内嵌、打印样式）+ zip（合成图 + AI 原图）；导出文件存 `data/runs/<run_id>/export/`（2026-11-06 第 6 轮确认） | R16 |
 | `app/pipeline/runs.py` | 运行记录保存与读取 | R15 |
 | `app/pipeline/schemas.py` | 各步骤数据结构与 JSON Schema | R8a R9 |
 | `app/ui/streamlit_app.py`、`app/ui/pages/*` | 接口检查页 + 4 步页面，只调用 pipeline | R13 R14 |
