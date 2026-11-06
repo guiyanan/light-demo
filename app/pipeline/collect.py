@@ -44,19 +44,32 @@ def top_comments(comments: list[dict[str, Any]], n: int) -> list[dict[str, Any]]
     return sorted(comments, key=lambda c: c["likes"], reverse=True)[: max(n, 0)]
 
 
+def pick_notes(candidates: list[dict[str, Any]], *, max_notes: int, min_comments: int) -> list[dict[str, Any]]:
+    """R4 v1.2：去掉评论数 < min_comments 的笔记，按评论数从多到少取 max_notes 篇（同数保持搜索顺序）。
+    返回新记录：rank 重新编号，search_rank 记录在搜索结果中的位置。"""
+    kept = [n for n in candidates if n["comments"] >= min_comments]
+    kept = sorted(kept, key=lambda n: n["comments"], reverse=True)[: max(max_notes, 0)]
+    return [{**n, "search_rank": n["rank"], "rank": i} for i, n in enumerate(kept, start=1)]
+
+
 def collect(client: XhsClient, keywords: Iterable[str], cfg: CollectConfig) -> CollectResult:
     calls_before = client.http.counter.get(client.service)
     with log_step(logger, "collect_search", keywords=list(keywords)) as step:
-        sr = search_top_notes(client, keywords, max_notes=cfg.max_notes)
-        step.count = len(sr.notes)
+        sr = search_top_notes(client, keywords, max_notes=max(cfg.candidate_notes, cfg.max_notes))
+        notes = pick_notes(sr.notes, max_notes=cfg.max_notes, min_comments=cfg.min_note_comments)
+        step.count = len(notes)
+    logger.info(
+        f"候选 {len(sr.notes)} 篇，按评论数挑出 {len(notes)} 篇",
+        extra={"event": "notes_picked", "candidates": len(sr.notes), "count": len(notes)},
+    )
 
-    res = CollectResult(keywords=sr.keywords, notes=sr.notes, comments=[])
+    res = CollectResult(keywords=sr.keywords, notes=notes, comments=[])
     res.raw = [{"kind": "search", **p} for p in sr.raw_pages]
     points = sr.points
     errors: list[dict[str, str]] = []
 
-    with log_step(logger, "collect_comments", notes=len(sr.notes)) as step:
-        for note in sr.notes:
+    with log_step(logger, "collect_comments", notes=len(notes)) as step:
+        for note in notes:
             remaining = cfg.max_comments - len(res.comments)
             if remaining <= 0:
                 break
@@ -94,6 +107,7 @@ def collect(client: XhsClient, keywords: Iterable[str], cfg: CollectConfig) -> C
 
     res.stats = {
         "keywords": res.keywords,
+        "candidates": len(sr.notes),
         "notes": len(res.notes),
         "ads": sum(1 for n in res.notes if n["is_ad"]),
         "comments": len(res.comments),

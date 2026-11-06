@@ -22,7 +22,10 @@ logger = logging.getLogger("app.ui.collect")
 
 st.set_page_config(page_title="① 数据抓取", page_icon="🔎", layout="wide")
 st.title("🔎 ① 数据抓取")
-st.caption("从小红书（聚道云接口）取搜索结果前 10 篇笔记，每篇取点赞最多的 2 条评论。一次约 11 次接口调用、约 220 点。")
+st.caption(
+    "从小红书（聚道云接口）取搜索结果前 40 篇作候选，挑出评论最多的 10 篇（评论少于 3 条的不要），"
+    "再取这 10 篇的评论。一次约 12 次接口调用、约 240 点。"
+)
 
 cfg = load_config()
 setup_logging(cfg.paths.logs_dir if cfg.paths.logs_dir.is_absolute() else ROOT / cfg.paths.logs_dir)
@@ -105,7 +108,8 @@ cols[1].metric("评论", len(run.comments))
 cols[2].metric("广告帖", sum(1 for n in run.notes if n.get("is_ad")))
 cols[3].metric("接口调用", sum((s.get("api_calls") or {}).values()))
 cols[4].metric("消耗点数", s.get("points", 0))
-st.caption(f"运行编号 {run.run_id} · 保存位置 data/runs/{run.run_id}/")
+cand = f"从 {s['candidates']} 篇候选中挑出 · " if s.get("candidates") else ""
+st.caption(f"{cand}运行编号 {run.run_id} · 保存位置 data/runs/{run.run_id}/")
 
 for e in s.get("comment_errors") or []:
     st.warning(f"笔记 {e['note_id']} 的评论获取失败，已跳过：{e['error']}")

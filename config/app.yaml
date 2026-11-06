@@ -1,6 +1,8 @@
 # 业务参数（不含密钥；密钥在 .env）
 collect:
-  max_notes: 10            # 搜索结果取前 10 篇
+  candidate_notes: 40      # 先取搜索结果前 40 篇作候选
+  min_note_comments: 3     # 评论数少于 3 的笔记不要
+  max_notes: 10            # 从候选中按评论数挑 10 篇
   comments_per_note: 2     # 每篇取点赞最多的 2 条评论
   max_comments: 20         # 评论总数上限
   default_keywords: ["低温酸奶"]
