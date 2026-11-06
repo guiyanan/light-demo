@@ -174,11 +174,11 @@
 
 ## 第 5 轮：产品图
 
-- [ ] **Step 15：生图客户端**
+- [x] **Step 15：生图客户端**
   - 对应需求：R10、R12
   - 修改文件：`app/clients/image.py` `tests/fixtures/image/*`（基于第 1 轮真实响应）
   - 单元测试：`tests/test_image.py::test_b64_json`、`::test_url_download`、`::test_timeout`、`::test_400_no_retry`、`::test_5xx_retry_max_2`、`::test_prompt_forbids_text_and_logo`
-  - Commit：
+  - Commit：027a012
 
 - [ ] **Step 16：合成展示图**
   - 对应需求：R11、R12
