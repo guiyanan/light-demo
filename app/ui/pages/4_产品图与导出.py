@@ -1,9 +1,10 @@
-"""网页「④产品图」页（R13、R10、R11）。导出功能在第 6 轮加到本页。
+"""网页「④产品图与导出」页（R13、R10、R11、R16）。
 
 界面只负责调用 app.pipeline.runs 并展示结果：
 - 选一次已生成概念的抓取结果 → 点「生成图片」→ 3 张同时画，合成 1600×1000 展示图
 - 失败的那张显示灰色占位图 + 原因和编号，可单独点「重画第 n 张」
 - 图片保存在这次抓取的目录里，再次打开直接展示，不再调用接口
+- 点「生成报告和压缩包」→ 两个下载按钮；导出文件同时存到 export/ 目录
 """
 
 import logging
@@ -105,3 +106,34 @@ for it in saved.get("items", []):
         if st.button(label, key=f"image_retry_{it['no']}"):
             do_images(run_id, only=[it["no"]])
             st.rerun()
+
+# ---------------- 导出（第 6 轮，R16） ----------------
+st.divider()
+st.subheader("📦 导出")
+st.caption("报告是一个 HTML 文件，图片已放在里面，双击用浏览器打开即可，不需要联网；在浏览器里「打印 → 存为 PDF」"
+           "可得到每个概念一页的 PDF。压缩包里是 3 张合成展示图和 AI 原图。")
+if st.button("生成报告和压缩包", key="export_run"):
+    ss.pop("export", None)
+    with request_context() as rid:
+        try:
+            res = runs.export_and_save(RUNS, run_id)
+            ss["export"] = {"run_id": run_id, "html": res.html, "zip": res.zip_bytes, "html_name": res.html_name,
+                            "zip_name": res.zip_name, "failed": res.failed}
+        except (runs.StepInputError, runs.RunNotFound) as e:
+            logger.warning(f"导出失败：{e}", extra={"event": "ui_export_failed", "error_type": type(e).__name__})
+            st.error(f"❌ 导出失败：{e}\n\n编号 {rid}")
+        except Exception as e:  # 兜底：记录完整堆栈，页面给出编号便于查日志
+            logger.exception("导出出现未预期错误", extra={"event": "ui_export_failed"})
+            st.error(f"❌ 导出失败：程序出错：{type(e).__name__}：{e}\n\n编号 {rid}（可凭编号在 logs/ 中查找详细日志）")
+
+ex = ss.get("export")
+if ex and ex["run_id"] == run_id:
+    if ex["failed"]:
+        nos = "、".join(f"第 {n} 张" for n in ex["failed"])
+        st.warning(f"{nos}效果图生成失败，报告里该处已标注。建议先点上面的「重试」，再重新生成报告。")
+    st.caption(f"已同时保存到 data/runs/{run_id}/export/")
+    c1, c2 = st.columns(2)
+    c1.download_button("⬇️ 下载报告（HTML）", ex["html"].encode("utf-8"), file_name=ex["html_name"],
+                       mime="text/html", key="export_html", width="stretch")
+    c2.download_button("⬇️ 下载图片压缩包（zip）", ex["zip"], file_name=ex["zip_name"],
+                       mime="application/zip", key="export_zip", width="stretch")
