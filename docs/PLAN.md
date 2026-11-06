@@ -165,7 +165,7 @@
 - [ ] **Step 14：网页"③新品概念"页**
   - 对应需求：R13
   - 修改文件：`app/ui/pages/3_新品概念.py` `app/ui/streamlit_app.py`（首页使用说明）
-  - 单元测试：`tests/test_ui_concept.py::test_three_cards_all_fields`、`::test_error_and_retry`、`::test_needs_missing_hint`
+  - 单元测试：`tests/test_ui_concept.py::test_three_cards_all_fields`、`::test_error_and_retry`、`::test_needs_missing_hint`、`::test_warnings_shown`
   - Commit：
 
 **🔍 第 4 轮测试（你来）**：点"生成概念"，看 3 个概念的字段是否齐全、内容是否和需求对得上。
