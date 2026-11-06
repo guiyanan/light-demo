@@ -5,6 +5,7 @@
     notes.jsonl           笔记（每行一篇）
     comments.jsonl        评论（每行一条）
     stats.json            关键词、条数、调用次数、消耗点数、创建时间、已完成的步骤
+    insight.json          ②需求洞察结果（需求 + 原话证据 + 统计）
 读取历史运行只读本地文件，不调用任何接口。后续步骤（需求、概念、图片）在同一目录追加文件。
 """
 
@@ -22,9 +23,11 @@ from pathlib import Path
 from typing import Any
 
 from app.clients.http import CallCounter
+from app.clients.llm import LlmClient
 from app.clients.xhs import XhsClient
 from app.config import ROOT, AppConfig, load_config
 from app.pipeline import collect as collect_mod
+from app.pipeline import insight as insight_mod
 from app.pipeline.collect import CollectResult
 
 logger = logging.getLogger(__name__)
@@ -134,11 +137,15 @@ def list_runs(base_dir: Path) -> list[RunSummary]:
     return out
 
 
-def load_run(base_dir: Path, run_id: str) -> Run:
-    """读取一次历史运行（只读本地文件，不调用接口）。"""
+def _run_path(base_dir: Path, run_id: str) -> Path:
     if not run_id or not _RUN_ID_RE.match(run_id):
         raise RunNotFound(f"运行编号不合法：{run_id!r}")
-    d = Path(base_dir) / run_id
+    return Path(base_dir) / run_id
+
+
+def load_run(base_dir: Path, run_id: str) -> Run:
+    """读取一次历史运行（只读本地文件，不调用接口）。"""
+    d = _run_path(base_dir, run_id)
     stats_path = d / "stats.json"
     if not stats_path.is_file():
         raise RunNotFound(f"找不到运行记录：{run_id}")
@@ -167,3 +174,59 @@ def collect_and_save(
     client = XhsClient(cfg, sleep=sleep, counter=CallCounter())
     result = collect_mod.collect(client, keywords, cfg.collect)
     return save_collect(result, Path(base_dir) if base_dir else runs_dir(cfg), now=now)
+
+
+# ---------------- ②需求洞察 ----------------
+def cache_dir(cfg: AppConfig) -> Path:
+    base = cfg.paths.data_dir
+    return (base if base.is_absolute() else ROOT / base) / "cache" / "llm"
+
+
+def save_insight(base_dir: Path, run_id: str, result: insight_mod.InsightResult) -> None:
+    """把需求洞察结果写入 insight.json，并在 stats.json 的 steps 里记一笔（重做不重复记）。"""
+    d = _run_path(base_dir, run_id)
+    stats_path = d / "stats.json"
+    if not stats_path.is_file():
+        raise RunNotFound(f"找不到运行记录：{run_id}")
+    try:
+        _write_json(d / "insight.json", result.to_dict())
+        stats = json.loads(stats_path.read_text(encoding="utf-8"))
+        if "insight" not in stats.setdefault("steps", []):
+            stats["steps"].append("insight")
+        _write_json(stats_path, stats)
+    except (OSError, ValueError):
+        logger.exception("需求洞察结果保存失败", extra={"event": "insight_save_failed", "run_id": run_id})
+        raise
+    logger.info("需求洞察结果已保存", extra={"event": "insight_saved", "run_id": run_id})
+
+
+def load_insight(base_dir: Path, run_id: str) -> dict[str, Any] | None:
+    """读取已保存的需求洞察结果；还没做过则返回 None。只读本地文件。"""
+    path = _run_path(base_dir, run_id) / "insight.json"
+    if not path.is_file():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        logger.exception("需求洞察结果读取失败", extra={"event": "insight_load_failed", "run_id": run_id})
+        raise RunNotFound(f"需求洞察结果已损坏：{run_id}（{e}）") from e
+
+
+def insight_and_save(
+    run_id: str,
+    cfg: AppConfig | None = None,
+    *,
+    base_dir: Path | None = None,
+    llm: Any = None,
+    sleep: Callable[[float], Any] = time.sleep,
+) -> dict[str, Any]:
+    """网页「提炼需求」：检查配置 → 读这次抓取的笔记和评论 → 调大模型 → 保存，返回结果。"""
+    cfg = cfg or load_config()
+    base = Path(base_dir) if base_dir else runs_dir(cfg)
+    run = load_run(base, run_id)
+    if llm is None:
+        cfg.require("llm")
+        llm = LlmClient(cfg, sleep=sleep, counter=CallCounter())
+    result = insight_mod.extract(llm, run.notes, run.comments, cache_dir=cache_dir(cfg))
+    save_insight(base, run_id, result)
+    return result.to_dict()
