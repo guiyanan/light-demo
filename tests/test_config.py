@@ -123,7 +123,7 @@ def test_yaml_values_loaded(yaml_file):
 def test_repo_yaml_is_valid():
     """仓库自带的 config/app.yaml 必须能加载，且数量与需求一致。"""
     cfg = load_config(env=FULL_ENV)
-    assert (cfg.collect.max_notes, cfg.collect.comments_per_note, cfg.collect.max_comments) == (10, 2, 20)
+    assert (cfg.collect.max_notes, cfg.collect.comments_per_note, cfg.collect.max_comments) == (10, 20, 200)
     assert cfg.image.timeout_seconds == 180
 
 

@@ -114,7 +114,7 @@ def test_collect_and_save(tmp_path):
     serve_comments(default_likes=[3, 1, 2])
     run_id = runs.collect_and_save(["低温酸奶"], cfg, base_dir=tmp_path, now=NOW, sleep=lambda s: None)
     run = runs.load_run(tmp_path, run_id)
-    assert len(run.notes) == 10 and len(run.comments) == 20
+    assert len(run.notes) == 10 and len(run.comments) == 30  # 每篇整页 3 条全部保留
     assert run.stats["api_calls"] == {"xhs": 12}  # 每次运行单独计数（2 次搜索 + 10 次评论）
 
 

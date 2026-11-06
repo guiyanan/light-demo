@@ -1,4 +1,5 @@
-"""数据抓取流程（R4–R7）：搜索前 N 篇笔记 → 每篇取 1 页评论（按点赞排序）→ 每篇留点赞最高的 2 条。
+"""数据抓取流程（R4–R7，需求 v1.2）：搜索 40 篇候选 → 按评论数挑 10 篇 → 每篇取 1 页评论（按点赞排序）
+→ 去掉水评论后全部保留。
 
 只负责业务逻辑；接口调用经 app.clients.xhs（重试、日志、打码在 http 层）。
 """
@@ -6,6 +7,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
@@ -28,6 +30,23 @@ logger = logging.getLogger(__name__)
 
 # 这些错误换一篇笔记也不会好，直接停止整个抓取
 FATAL_ERRORS = (AuthError, QuotaError)
+
+# ---------------- 水评论（R6 v1.2） ----------------
+JUNK_MIN_CHARS = 3  # 去掉表情代码、话题标签、标点后少于 3 个字
+JUNK_WORDS = ("代购", "建联", "私信", "私我", "互关", "互粉", "求互", "加v", "加微", "vx", "滴滴我", "dd我", "达人机构")
+_EMOJI_CODE_RE = re.compile(r"\[[^\[\]]{1,10}\]")  # [笑哭R]、[goods]
+_TOPIC_RE = re.compile(r"#[^#\s]+#?")
+_NON_WORD_RE = re.compile(r"[\W_]+")  # 标点、空格、emoji
+_PM_RE = re.compile(r"(?<![a-z])(pm|dd)(?![a-z])")
+
+
+def is_junk(text: str) -> bool:
+    """引流 / 代购 / 纯表情 / 纯话题标签 / 太短的评论。提问和吐槽不算水评论。"""
+    low = (text or "").lower()
+    if any(w in low for w in JUNK_WORDS) or _PM_RE.search(low):
+        return True
+    core = _NON_WORD_RE.sub("", _TOPIC_RE.sub("", _EMOJI_CODE_RE.sub("", low)))
+    return len(core) < JUNK_MIN_CHARS
 
 
 @dataclass
@@ -67,6 +86,7 @@ def collect(client: XhsClient, keywords: Iterable[str], cfg: CollectConfig) -> C
     res.raw = [{"kind": "search", **p} for p in sr.raw_pages]
     points = sr.points
     errors: list[dict[str, str]] = []
+    junk = 0
 
     with log_step(logger, "collect_comments", notes=len(notes)) as step:
         for note in notes:
@@ -102,7 +122,9 @@ def collect(client: XhsClient, keywords: Iterable[str], cfg: CollectConfig) -> C
             for data in pages:
                 res.raw.append({"kind": "comments", "note_id": note["note_id"], "response": scrub_identity(data)})
                 points += consumed_points(data)
-            res.comments.extend(top_comments(parsed, min(cfg.comments_per_note, remaining)))
+            useful = [c for c in parsed if not is_junk(c["content"])]
+            junk += len(parsed) - len(useful)
+            res.comments.extend(top_comments(useful, min(cfg.comments_per_note, remaining)))
         step.count = len(res.comments)
 
     res.stats = {
@@ -111,6 +133,7 @@ def collect(client: XhsClient, keywords: Iterable[str], cfg: CollectConfig) -> C
         "notes": len(res.notes),
         "ads": sum(1 for n in res.notes if n["is_ad"]),
         "comments": len(res.comments),
+        "junk_comments": junk,
         "api_calls": {client.service: client.http.counter.get(client.service) - calls_before},
         "points": points,
         "comment_errors": errors,

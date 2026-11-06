@@ -109,7 +109,8 @@ cols[2].metric("广告帖", sum(1 for n in run.notes if n.get("is_ad")))
 cols[3].metric("接口调用", sum((s.get("api_calls") or {}).values()))
 cols[4].metric("消耗点数", s.get("points", 0))
 cand = f"从 {s['candidates']} 篇候选中挑出 · " if s.get("candidates") else ""
-st.caption(f"{cand}运行编号 {run.run_id} · 保存位置 data/runs/{run.run_id}/")
+junk = f"已去掉 {s['junk_comments']} 条水评论 · " if s.get("junk_comments") else ""
+st.caption(f"{cand}{junk}运行编号 {run.run_id} · 保存位置 data/runs/{run.run_id}/")
 
 for e in s.get("comment_errors") or []:
     st.warning(f"笔记 {e['note_id']} 的评论获取失败，已跳过：{e['error']}")
