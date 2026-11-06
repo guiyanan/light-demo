@@ -162,11 +162,11 @@
   - 单元测试：`tests/test_concept.py::test_three_concepts_schema_valid`、`::test_need_ids_within_1_to_5`、`::test_nutrition_marked_ai_estimate`、`::test_image_prompt_present`、`::test_input_includes_needs_and_quotes`、`::test_competitor_names_retry_then_warn`、`::test_primary_needs_distinct`、`::test_concepts_saved_and_loaded`
   - Commit：667a02a
 
-- [ ] **Step 14：网页"③新品概念"页**
+- [x] **Step 14：网页"③新品概念"页**
   - 对应需求：R13
   - 修改文件：`app/ui/pages/3_新品概念.py` `app/ui/streamlit_app.py`（首页使用说明）
-  - 单元测试：`tests/test_ui_concept.py::test_three_cards_all_fields`、`::test_error_and_retry`、`::test_needs_missing_hint`
-  - Commit：
+  - 单元测试：`tests/test_ui_concept.py::test_three_cards_all_fields`、`::test_error_and_retry`、`::test_needs_missing_hint`、`::test_warnings_shown`
+  - Commit：89590a0
 
 **🔍 第 4 轮测试（你来）**：点"生成概念"，看 3 个概念的字段是否齐全、内容是否和需求对得上。
 
