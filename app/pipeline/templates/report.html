@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>$title</title>
+<style>
+  body { font-family: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; color: #212529;
+         max-width: 1100px; margin: 0 auto; padding: 32px 24px; line-height: 1.6; background: #fff; }
+  h1 { color: #005eaa; margin-bottom: 4px; }
+  h2 { border-left: 6px solid #005eaa; padding-left: 10px; margin-top: 40px; }
+  .meta { color: #6c757d; }
+  .need { border: 1px solid #dee2e6; border-radius: 8px; padding: 12px 16px; margin: 12px 0; }
+  .need h3 { margin: 0 0 4px; }
+  .tag { display: inline-block; font-size: 13px; padding: 0 8px; border-radius: 10px; background: #e7f1fa;
+         color: #005eaa; margin-left: 6px; vertical-align: middle; }
+  blockquote { margin: 8px 0; padding: 4px 12px; border-left: 3px solid #adb5bd; color: #343a40; }
+  .src { color: #6c757d; font-size: 13px; }
+  .ad { display: inline-block; font-size: 12px; padding: 0 6px; border-radius: 4px; background: #fff3cd;
+        color: #856404; margin-left: 4px; }
+  .warn { color: #b02a37; }
+  .concept img { width: 100%; height: auto; border: 1px solid #dee2e6; }
+  .failed { background: #f8d7da; color: #842029; padding: 8px 12px; border-radius: 6px; }
+  table { border-collapse: collapse; margin: 8px 0; }
+  th, td { border: 1px solid #dee2e6; padding: 4px 12px; text-align: left; }
+  dt { font-weight: bold; color: #6c757d; margin-top: 8px; }
+  dd { margin: 0 0 0 0; }
+  footer { margin-top: 48px; color: #6c757d; font-size: 13px; }
+  @media print {
+    body { max-width: none; padding: 0; }
+    .concept { break-before: page; page-break-before: always; }
+    .need { break-inside: avoid; page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<h1>$title</h1>
+<p class="meta">关键词：$keywords · 抓取时间：$created_at（北京时间）· 笔记 $notes 篇 · 评论 $comments 条 · 其中广告帖 $ads 篇</p>
+
+<h2>消费者需求（$need_count 条）</h2>
+<p class="meta">原话均为小红书笔记正文或评论的原文；标「广告」的来自广告帖，代表竞品主打的卖点。</p>
+$needs
+
+<h2>新品概念（$concept_count 个）</h2>
+$concepts
+
+<footer>本报告由 AI 根据小红书公开笔记生成，概念与效果图仅供内部讨论，非最终设计；营养数据为 AI 估算。运行编号 $run_id</footer>
+</body>
+</html>

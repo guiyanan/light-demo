@@ -201,8 +201,8 @@
 
 - [ ] **Step 18：导出 HTML 报告 + PNG zip**
   - 对应需求：R16
-  - 修改文件：`app/pipeline/export.py` `app/pipeline/templates/report.html`
-  - 单元测试：`tests/test_export.py::test_report_contains_needs_quotes_concepts`、`::test_images_embedded`、`::test_ad_label_in_report`、`::test_zip_contains_3_png`、`::test_no_user_identity`
+  - 修改文件：`app/pipeline/export.py` `app/pipeline/templates/report.html` `app/pipeline/runs.py`（`export_and_save`）
+  - 单元测试：`tests/test_export.py::test_report_contains_needs_quotes_concepts`、`::test_images_embedded`、`::test_ad_label_in_report`、`::test_zip_contains_cards_and_raw`、`::test_no_user_identity_or_links`、`::test_failed_image_still_exports`、`::test_missing_steps_rejected`、`::test_print_one_concept_per_page`、`::test_html_escaped`、`::test_export_and_save`
   - Commit：
 
 - [ ] **Step 19：导出按钮 + 端到端测试 + README 收尾**
