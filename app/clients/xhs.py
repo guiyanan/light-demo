@@ -21,7 +21,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from typing import Any
 
-from app.clients.http import ApiError, CallCounter, HttpClient, HttpResult, InvalidResponseError
+from app.clients.http import ApiError, CallCounter, HttpClient, HttpResult, InvalidResponseError, ServerError
 from app.config import AppConfig
 
 logger = logging.getLogger(__name__)
@@ -50,6 +50,16 @@ class XhsBusinessError(ApiError):
     """HTTP 200 但聚道云业务码表示失败。"""
 
     error_type = "business_error"
+
+class XhsUpstreamError(ServerError):
+    """BUG-004：聚道云返回 5xx（常见是它自己的上游供应商故障，被包装成 502「下游系统调用失败」）。"""
+
+    def summary(self) -> str:
+        return (
+            "聚道云调用失败，可能是聚道云的上游故障（失败不扣点）。请到聚道云后台「调用记录」看「上游状态」，"
+            f"稍后点「重试这一步」：{self}"
+        )
+
 
 SEARCH_PATH = "/p6/xhs_v2/search_notes"
 COMMENTS_PATH = "/p6/xhs_v2/get_note_comments"
@@ -82,7 +92,7 @@ class XhsClient:
         params: dict[str, Any] = {"keyword": keyword, "page": page}
         if sort_type:
             params["sort_type"] = sort_type
-        return self.http.get(SEARCH_PATH, params=params)
+        return self._get(SEARCH_PATH, params)
 
     def get_note_comments_raw(
         self,
@@ -98,7 +108,16 @@ class XhsClient:
             params["xsec_token"] = xsec_token
         if sort_strategy:
             params["sort_strategy"] = sort_strategy
-        return self.http.get(COMMENTS_PATH, params=params)
+        return self._get(COMMENTS_PATH, params)
+
+    def _get(self, path: str, params: dict[str, Any]) -> HttpResult:
+        try:
+            return self.http.get(path, params=params)
+        except ServerError as e:  # 已由 HttpClient 重试并记录日志，这里只换成更明确的提示
+            raise XhsUpstreamError(
+                e.message, service=e.service, status_code=e.status_code, body=e.body,
+                retry_after=e.retry_after, attempts=e.attempts, request_id=e.request_id,
+            ) from e
 
 
 def business_error(data: Any) -> str | None:
