@@ -2,7 +2,7 @@
 
 > 仓库：https://github.com/guiyanan/light-demo
 > 状态：**草稿，待确认**（2026-11-04）
-> 依据：`docs/REQUIREMENTS.md` v1.1
+> 依据：`docs/REQUIREMENTS.md` v1.3（第 3 轮更新：Kimi 接口说明、测试样本、jsonschema 依赖、BUG-004 涉及 `app/clients/xhs.py` 错误提示）
 > 规则：开发中如需改动本文件未列出的内容，先更新 SCOPE.md 并写明理由，再动手。
 
 ---
@@ -22,7 +22,7 @@
 | `app/diag.py` | 接口检查（命令行 + 供网页调用） | R14 |
 | `app/clients/http.py` | 公共 HTTP：重试、退避、计时、日志、打码、计数 | R2 R3 |
 | `app/clients/xhs.py` | 聚道云：搜索笔记、获取评论、解析 | R4–R7 |
-| `app/clients/llm.py` | Kimi（月之暗面开放平台）：JSON 输出、Schema 校验、重试、缓存 | R8a R9 |
+| `app/clients/llm.py` | Kimi（默认 Coding Plan 接口，可改开放平台）：JSON 输出、Schema 校验、重试、缓存（缓存文件放 `data/cache/llm/`） | R8a R9 |
 | `app/clients/image.py` | BananaRouter `gpt-image-2`：b64_json / url | R10 |
 | `app/pipeline/collect.py` | 抓取前 10 篇 + 每篇取 2 条评论 | R4–R7 |
 | `app/pipeline/insight.py` | 提炼 5 条需求 + 原话子串校验 | R8a R8b |
@@ -32,6 +32,7 @@
 | `app/pipeline/runs.py` | 运行记录保存与读取 | R15 |
 | `app/pipeline/schemas.py` | 各步骤数据结构与 JSON Schema | R8a R9 |
 | `app/ui/streamlit_app.py`、`app/ui/pages/*` | 接口检查页 + 4 步页面，只调用 pipeline | R13 R14 |
+| `tests/fixtures/insight/*` | 第 3 轮测试样本：由真实运行 `20261106-022356-2214`（10 篇 / 88 条评论）去掉 xsec_token 等字段后得到，不含用户身份信息（2026-11-05 新增） | R8a R8b |
 | `config/app.yaml` | 抓取数量、超时、重试、图片尺寸等 | R1 |
 | `assets/logo/README.md` | 说明 logo 由客户提供 | R12 |
 | `tests/**`、`tests/fixtures/**` | 单元测试与模拟数据 | 全部 |
@@ -39,7 +40,7 @@
 | `scripts/docker_proxy.sh` | 从 Mac 系统代理设置得出 Docker 构建用的代理地址（2026-11-04 新增：修 BUG-001，用户 Mac 开着本地代理，Docker 构建不走代理导致下载失败） | R17 |
 | `Dockerfile`、`docker-compose.yml`、`.dockerignore` | 容器化、挂载 data/logs、中文字体 | R17 |
 | `.env.example`、`.gitignore` | 配置样例与忽略规则 | R1 |
-| `requirements.txt`、`requirements-dev.txt`、`pyproject.toml` | 依赖、ruff、pytest 配置 | 2.1 |
+| `requirements.txt`、`requirements-dev.txt`、`pyproject.toml` | 依赖、ruff、pytest 配置（第 3 轮新增 `jsonschema`，用于 R8a / R9 的 JSON Schema 校验） | 2.1 |
 | `.github/workflows/ci.yml` | 代码检查 → 测试 → docker compose build → 上传测试日志 | S7 |
 
 ## 3. 只读 / 不得修改
@@ -67,4 +68,5 @@
 | 7 | 本会话对仓库只有读权限 | 无法推送 | 开工前需授予推送权限 |
 | 8 | 空仓库无法直接走 PR | 首个 commit 只能进 `main` | Step 1 直接提交 `main`，之后每步走 `feature/*` → PR → CI 通过 → 合并 |
 | 9 | 本地文件夹中 git 的删除操作默认被禁止 | clone 后 pull 失败 | `git pull` 由用户双击 `start.command` 在 Mac 上执行，不受此限制 |
+| 11 | Kimi Coding Plan 模型带思考过程，输出慢、可能夹带多余文字 | 超时或 JSON 解析失败 | 超时调到 180 秒；解析时去掉代码块标记、只取 JSON 部分；不合格重试 1 次 |
 | 10 | 接口费用 / 额度耗尽 | 演示中断 | 402 不重试并提示；大模型结果缓存；可直接展示历史运行结果 |
