@@ -31,6 +31,8 @@ MAX_PAGES_PER_KEYWORD = 5  # 防止接口一直返回重复内容时无限翻页
 AD_FLAGS = ("order_cooperate", "commercial_bridge_note")
 # 评论排序：like_count = 按点赞从高到低（2026-11-04 实测确认；另有 default、latest_v2）
 COMMENT_SORT_BY_LIKES = "like_count"
+# BUG-003：部分笔记按点赞排序返回空页（但其实有评论），此时改用默认排序再取一次
+COMMENT_SORT_DEFAULT = "default"
 # 不保存的用户身份字段（R7）
 IDENTITY_KEYS = frozenset(
     {"user", "user_info", "nickname", "original_name", "userid", "user_id", "red_id", "images", "avatar",
@@ -364,3 +366,11 @@ def parse_comments(data: Any, note_id: str) -> list[dict[str, Any]]:
             {"comment_id": str(c.get("id") or ""), "note_id": note_id, "content": content, "likes": _int(c.get("like_count"))}
         )
     return out
+
+
+def comment_count_l1(data: Any) -> int:
+    """评论页里的一级评论总数（取不到时为 0）。"""
+    try:
+        return _int(data["data"]["result"]["list"].get("comment_count_l1"))
+    except (KeyError, TypeError, AttributeError):
+        return 0
