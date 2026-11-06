@@ -1,0 +1,140 @@
+{
+  "needs": [
+    {
+      "no": 1,
+      "title": "婴幼儿低温活菌",
+      "description": "面向宝宝与断奶过渡场景，低温保留活菌、A2奶源、低酸奶香和助消化体验是核心购买理由。",
+      "type": "期待",
+      "quotes": [
+        {
+          "text": "父爱配方是低温酸奶，常温酸奶是喝不到有益活菌的，这个口感也不酸，奶香味很浓",
+          "source": "评论",
+          "note_id": "6aa256e9000000002902ced1",
+          "note_rank": 1,
+          "note_title": "几个月终于有点用了！！老母亲哭了",
+          "is_ad": true
+        },
+        {
+          "text": "给小宝宝喝就得喝A2奶源的，接近母乳，适应起来更快",
+          "source": "评论",
+          "note_id": "6aa256e9000000002902ced1",
+          "note_rank": 1,
+          "note_title": "几个月终于有点用了！！老母亲哭了",
+          "is_ad": true
+        }
+      ],
+      "missing_evidence": false
+    },
+    {
+      "no": 2,
+      "title": "低甜干净无香精",
+      "description": "消费者反复追问是否含糖、配料是否干净，并明确反感香精味与劣质口感，需要低甜或无糖、配料透明、发酵香自然的产品。",
+      "type": "负面",
+      "quotes": [
+        {
+          "text": "父爱配方里有含糖吗？还是纯酸的？",
+          "source": "评论",
+          "note_id": "6aa1332e000000002601bd27",
+          "note_rank": 5,
+          "note_title": "断母乳成功！宝宝酸奶立大功",
+          "is_ad": true
+        },
+        {
+          "text": "好难吃，一股香精味，很劣质",
+          "source": "评论",
+          "note_id": "6a5e09fc000000000301f483",
+          "note_rank": 7,
+          "note_title": "求求千万别停产🥺这酸奶怎么越吃越上头啊",
+          "is_ad": false
+        }
+      ],
+      "missing_evidence": false
+    },
+    {
+      "no": 3,
+      "title": "肠道功能说明",
+      "description": "用户对SIBO、菌群修复等功效感兴趣，但迫切需要明确菌株、每日剂量、食用时机以及牛奶过敏替代方案。",
+      "type": "期待",
+      "quotes": [
+        {
+          "text": "请问一天吃多少的量？大概什么时候吃？",
+          "source": "评论",
+          "note_id": "6a68a8190000000002003c01",
+          "note_rank": 2,
+          "note_title": "SIBO 酸奶：长时间低温发酵酸奶",
+          "is_ad": false
+        },
+        {
+          "text": "对牛奶过敏，能不能用椰子水或者椰奶",
+          "source": "评论",
+          "note_id": "6a68a8190000000002003c01",
+          "note_rank": 2,
+          "note_title": "SIBO 酸奶：长时间低温发酵酸奶",
+          "is_ad": false
+        }
+      ],
+      "missing_evidence": false
+    },
+    {
+      "no": 4,
+      "title": "高蛋白低酸奶皮",
+      "description": "非均质鲜奶低温慢发酵、杯中成型奶皮与高蛋白有差异化卖点，但需控制酸度、降低“难吃/怕酸”的尝试门槛。",
+      "type": "期待",
+      "quotes": [
+        {
+          "text": "给你补充个价格和配料表 蛋白质含量还是挺高的",
+          "source": "评论",
+          "note_id": "6a44c674000000000803e588",
+          "note_rank": 3,
+          "note_title": "澳洲的奶皮子酸奶也是给我吃上了",
+          "is_ad": false
+        },
+        {
+          "text": "請問會不會很酸？",
+          "source": "评论",
+          "note_id": "6a44c674000000000803e588",
+          "note_rank": 3,
+          "note_title": "澳洲的奶皮子酸奶也是给我吃上了",
+          "is_ad": false
+        }
+      ],
+      "missing_evidence": false
+    },
+    {
+      "no": 5,
+      "title": "安全干噎厚酸奶",
+      "description": "干噎冷萃酸奶走红，但自制存在杂菌污染、腹泻风险和浓稠度不稳定痛点，期待工业级卫生、质地稳定且噎感可控的成品。",
+      "type": "负面",
+      "quotes": [
+        {
+          "text": "但是还是不是很建议自己做发酵食品，我们自己没办法保证没有杂菌和有害菌群混进去了，吃了大概率会拉肚子[笑哭R]",
+          "source": "评论",
+          "note_id": "68f4e1840000000003035d2c",
+          "note_rank": 4,
+          "note_title": "自制干噎冷萃酸奶",
+          "is_ad": false
+        },
+        {
+          "text": "我也过滤了两次还是不太干，怎么回事啊",
+          "source": "评论",
+          "note_id": "68f4e1840000000003035d2c",
+          "note_rank": 4,
+          "note_title": "自制干噎冷萃酸奶",
+          "is_ad": false
+        }
+      ],
+      "missing_evidence": false
+    }
+  ],
+  "stats": {
+    "needs": 5,
+    "notes": 10,
+    "comments": 88,
+    "ads": 4,
+    "dropped_quotes": 0,
+    "missing_evidence": 0,
+    "retried": false,
+    "llm_calls": 1,
+    "cached": false
+  }
+}
