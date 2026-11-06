@@ -7,11 +7,14 @@
     stats.json            关键词、条数、调用次数、消耗点数、创建时间、已完成的步骤
     insight.json          ②需求洞察结果（需求 + 原话证据 + 统计）
     concepts.json         ③新品概念结果（3 个概念 + 统计 / 提示）
+    images/               ④产品图：concept_<n>_raw.<ext>（AI 效果图）、card_<n>.png（合成展示图）
+    images.json           ④产品图每张的状态（成功 / 失败原因 / 编号）和调用次数
 读取历史运行只读本地文件，不调用任何接口。后续步骤（需求、概念、图片）在同一目录追加文件。
 """
 
 from __future__ import annotations
 
+import contextvars
 import datetime as dt
 import json
 import logging
@@ -19,17 +22,20 @@ import re
 import time
 import uuid
 from collections.abc import Callable, Iterable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from app.clients.http import CallCounter
+from app.clients.http import ApiError, CallCounter
+from app.clients.image import ImageClient, build_prompt
 from app.clients.llm import LlmClient
 from app.clients.xhs import XhsClient
 from app.config import ROOT, AppConfig, load_config
 from app.pipeline import collect as collect_mod
 from app.pipeline import concept as concept_mod
 from app.pipeline import insight as insight_mod
+from app.pipeline import render as render_mod
 from app.pipeline.collect import CollectResult
 
 logger = logging.getLogger(__name__)
@@ -39,6 +45,10 @@ _RUN_ID_RE = re.compile(r"^[0-9A-Za-z][0-9A-Za-z_-]*$")
 
 class RunNotFound(Exception):
     """运行记录不存在或编号不合法。"""
+
+
+class StepInputError(ValueError):
+    """上一步还没做，这一步没有输入。"""
 
 
 def runs_dir(cfg: AppConfig) -> Path:
@@ -271,3 +281,83 @@ def concept_and_save(
     result = concept_mod.generate(llm, ins, brands=cfg.concept.competitor_brands, cache_dir=cache_dir(cfg))
     save_concepts(base, run_id, result)
     return result.to_dict()
+
+
+# ---------------- ④产品图 ----------------
+IMAGE_WORKERS = 3  # 3 张同时画（2026-11-05 用户确认）
+
+
+def load_images(base_dir: Path, run_id: str) -> dict[str, Any] | None:
+    return _load_step(base_dir, run_id, "images.json")
+
+
+def card_path(base_dir: Path, run_id: str, item: dict[str, Any]) -> Path:
+    return _run_path(base_dir, run_id) / item["card"]
+
+
+def _one_image(client: Any, concept: dict[str, Any], d: Path) -> dict[str, Any]:
+    """画一张效果图并合成展示图；失败时用灰色占位图，记下原因和编号。"""
+    no = concept["no"]
+    item: dict[str, Any] = {"no": no, "name": concept["name"], "ok": False, "placeholder": True,
+                            "raw": None, "card": f"images/card_{no}.png", "error": None, "request_id": None,
+                            "elapsed_ms": None}
+    content = None
+    try:
+        img = client.generate(build_prompt(concept["image_prompt"]))  # 不要文字和 logo 的约束
+        content = img.content
+        item["raw"] = f"images/concept_{no}_raw.{img.ext}"
+        (d / item["raw"]).write_bytes(content)
+        item.update(ok=True, elapsed_ms=img.elapsed_ms)
+    except ApiError as e:
+        item.update(error=e.summary(), request_id=e.request_id)
+        logger.error(f"第 {no} 张效果图生成失败：{e}", exc_info=(type(e), e, e.__traceback__),
+                     extra={"event": "image_failed", "concept_no": no, "status_code": e.status_code,
+                            "error_type": e.error_type})
+    except OSError as e:
+        item.update(error=f"效果图保存失败：{e}")
+        logger.exception(f"第 {no} 张效果图保存失败", extra={"event": "image_failed", "concept_no": no})
+    res = render_mod.render_card(concept, content)
+    item["placeholder"] = res.placeholder
+    (d / item["card"]).write_bytes(res.to_png())
+    return item
+
+
+def images_and_save(
+    run_id: str,
+    cfg: AppConfig | None = None,
+    *,
+    base_dir: Path | None = None,
+    image_client: Any = None,
+    only: list[int] | None = None,
+    sleep: Callable[[float], Any] = time.sleep,
+) -> dict[str, Any]:
+    """网页「生成图片」：3 张同时画并合成展示图；only=[n] 时只重画第 n 张，其余保持不变。"""
+    cfg = cfg or load_config()
+    base = Path(base_dir) if base_dir else runs_dir(cfg)
+    cons = load_concepts(base, run_id)
+    if not cons or not cons.get("concepts"):
+        raise StepInputError("这次还没有生成新品概念，请先完成「③新品概念」")
+    counter = CallCounter()
+    if image_client is None:
+        cfg.require("image")
+        image_client = ImageClient(cfg, sleep=sleep, counter=counter)
+    targets = [c for c in cons["concepts"] if only is None or c["no"] in only]
+    d = _run_path(base, run_id)
+    (d / "images").mkdir(exist_ok=True)
+    start = time.perf_counter()
+    logger.info("产品图开始", extra={"event": "images_start", "count": len(targets)})
+    with ThreadPoolExecutor(max_workers=IMAGE_WORKERS) as ex:  # 每个线程带上当前 request_id
+        futures = [ex.submit(contextvars.copy_context().run, _one_image, image_client, c, d) for c in targets]
+        new = {f.result()["no"]: f.result() for f in futures}
+
+    old = load_images(base, run_id) or {}
+    prev = {it["no"]: it for it in old.get("items", [])}
+    items = [new.get(c["no"]) or prev.get(c["no"]) for c in cons["concepts"]]
+    items = [it for it in items if it]
+    calls = int((old.get("stats") or {}).get("image_calls", 0)) + max(counter.get("image"), len(targets))
+    out = {"items": items, "stats": {"images": len(items), "failed": sum(1 for it in items if not it["ok"]),
+                                     "image_calls": calls}}
+    _save_step(base, run_id, "images.json", "image", out)
+    logger.info("产品图完成", extra={"event": "images_done", "elapsed_ms": round((time.perf_counter() - start) * 1000),
+                                   **out["stats"]})
+    return out
