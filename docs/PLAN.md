@@ -1,7 +1,7 @@
 # 方案文档：光明乳业 · 小红书洞察驱动的新品概念生成 Demo
 
 > 状态：**草稿，待确认**（2026-11-04）
-> 依据：`docs/REQUIREMENTS.md` v1.1、`docs/SCOPE.md`
+> 依据：`docs/REQUIREMENTS.md` v1.3、`docs/SCOPE.md`
 > 每个 Step 的规则：先写测试（红）→ 写代码（绿）→ 全量测试（输出存 `logs/test/`）→ Code Review → commit/push → CI 绿灯，全部满足才能勾选。方案变更先改本文件。
 > 每**轮**结束后：用户在访达里双击 `start.command`，在网页上用真实接口测试；**用户确认没问题后才进入下一轮**。发现问题按 bug 流程处理：先写复现测试 → 修复 → 记入 `docs/BUGS.md`。
 > 所有外部接口在单元测试中一律模拟；测试不依赖网络、随机数、当前时间和执行顺序。
@@ -125,20 +125,28 @@
 
 - [ ] **Step 10：大模型客户端（JSON 输出、校验、重试、缓存）**
   - 对应需求：R8a（基础）
-  - 修改文件：`app/clients/llm.py` `app/pipeline/schemas.py`
-  - 单元测试：`tests/test_llm.py::test_json_schema_ok`、`::test_invalid_json_retry_once_then_error`、`::test_cache_by_content_hash`、`::test_base_url_model_configurable`
+  - 修改文件：`app/clients/llm.py` `app/pipeline/schemas.py` `requirements.txt`（加 jsonschema）
+  - 单元测试：`tests/test_llm.py::test_json_schema_ok`、`::test_invalid_json_retry_once_then_error`、`::test_cache_by_content_hash`、`::test_base_url_model_configurable`、`::test_json_in_code_fence_parsed`
   - Commit：
 
 - [ ] **Step 11：提炼 5 条需求 + 原话真实性校验**
   - 对应需求：R8a、R8b
-  - 修改文件：`app/pipeline/insight.py` `app/pipeline/schemas.py`
-  - 单元测试：`tests/test_insight.py::test_five_needs_schema_valid`、`::test_quote_source_note_or_comment`、`::test_non_substring_quote_dropped_and_counted`、`::test_need_without_quotes_retry_then_flag`、`::test_fewer_than_5_returns_actual`
+  - 修改文件：`app/pipeline/insight.py` `app/pipeline/schemas.py` `app/pipeline/runs.py`（保存 / 读取 insight.json） `config/app.yaml`（llm 超时 180 秒） `tests/fixtures/insight/*`
+  - 输入：每篇标题 + 正文开头 + 全部保留评论；广告帖参与并标记（需求 v1.3）
+  - 单元测试：`tests/test_insight.py::test_five_needs_schema_valid`、`::test_quote_source_note_or_comment`、`::test_non_substring_quote_dropped_and_counted`、`::test_need_without_quotes_retry_then_flag`、`::test_fewer_than_5_returns_actual`、`::test_ads_included_and_marked`、`::test_insight_saved_and_loaded`
   - Commit：
 
 - [ ] **Step 12：网页"②需求洞察"页**
   - 对应需求：R13
   - 修改文件：`app/ui/pages/2_需求洞察.py`
-  - 单元测试：`tests/test_ui_insight.py::test_five_needs_with_quotes_rendered`、`::test_error_and_retry`
+  - 单元测试：`tests/test_ui_insight.py::test_five_needs_with_quotes_rendered`、`::test_error_and_retry`、`::test_ad_quote_labeled`
+  - Commit：
+
+- [ ] **Step 12a：聚道云故障时给出明确提示，修 BUG-004**
+  - 对应需求：R13（失败显示原因）
+  - 问题：聚道云把自己上游的 402 包装成 502「下游系统调用失败」，页面只显示「接口服务端出错」，用户看不出原因
+  - 修改文件：`app/clients/xhs.py` `docs/BUGS.md`
+  - 单元测试：`tests/test_xhs_search.py::test_bug_juhe_upstream_failure_hint`
   - Commit：
 
 **🔍 第 3 轮测试（你来）**：点"提炼需求"，看 5 条需求是否合理，原话能否在笔记或评论里找到。
