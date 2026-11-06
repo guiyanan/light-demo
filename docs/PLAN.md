@@ -129,12 +129,12 @@
   - 单元测试：`tests/test_llm.py::test_json_schema_ok`、`::test_invalid_json_retry_once_then_error`、`::test_cache_by_content_hash`、`::test_base_url_model_configurable`、`::test_json_in_code_fence_parsed`
   - Commit：686e83a
 
-- [ ] **Step 11：提炼 5 条需求 + 原话真实性校验**
+- [x] **Step 11：提炼 5 条需求 + 原话真实性校验**
   - 对应需求：R8a、R8b
   - 修改文件：`app/pipeline/insight.py` `app/pipeline/schemas.py` `app/pipeline/runs.py`（保存 / 读取 insight.json） `config/app.yaml`（llm 超时 180 秒） `tests/fixtures/insight/*`
   - 输入：每篇标题 + 正文开头 + 全部保留评论；广告帖参与并标记（需求 v1.3）
   - 单元测试：`tests/test_insight.py::test_five_needs_schema_valid`、`::test_quote_source_note_or_comment`、`::test_non_substring_quote_dropped_and_counted`、`::test_need_without_quotes_retry_then_flag`、`::test_fewer_than_5_returns_actual`、`::test_ads_included_and_marked`、`::test_insight_saved_and_loaded`
-  - Commit：
+  - Commit：5480248
 
 - [ ] **Step 12：网页"②需求洞察"页**
   - 对应需求：R13
