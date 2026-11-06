@@ -138,7 +138,7 @@
 
 - [ ] **Step 12：网页"②需求洞察"页**
   - 对应需求：R13
-  - 修改文件：`app/ui/pages/2_需求洞察.py`
+  - 修改文件：`app/ui/pages/2_需求洞察.py` `app/ui/streamlit_app.py`（首页使用说明）
   - 单元测试：`tests/test_ui_insight.py::test_five_needs_with_quotes_rendered`、`::test_error_and_retry`、`::test_ad_quote_labeled`
   - Commit：
 
