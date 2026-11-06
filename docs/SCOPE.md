@@ -18,7 +18,7 @@
 | `CLAUDE.md`、`AGENTS.md` | 全局开发流程摘要 + 本项目信息 | 流程 |
 | `README.md` | 首次准备步骤、`start.command` 用法、接口检查方法 | S7 R17 |
 | `docs/REQUIREMENTS.md` `SCOPE.md` `PLAN.md` `BUGS.md` | 需求、范围、方案、bug 记录 | 流程 |
-| `app/__init__.py` `config.py` `logging_setup.py` | 配置、日志 | R1 R2 |
+| `app/__init__.py` `config.py` `logging_setup.py` | 配置、日志（第 4 轮 config.py 新增 ConceptConfig 读取竞品名单） | R1 R2 R9 |
 | `app/diag.py` | 接口检查（命令行 + 供网页调用） | R14 |
 | `app/clients/http.py` | 公共 HTTP：重试、退避、计时、日志、打码、计数 | R2 R3 |
 | `app/clients/xhs.py` | 聚道云：搜索笔记、获取评论、解析 | R4–R7 |
@@ -26,14 +26,14 @@
 | `app/clients/image.py` | BananaRouter `gpt-image-2`：b64_json / url | R10 |
 | `app/pipeline/collect.py` | 抓取前 10 篇 + 每篇取 2 条评论 | R4–R7 |
 | `app/pipeline/insight.py` | 提炼 5 条需求 + 原话子串校验 | R8a R8b |
-| `app/pipeline/concept.py` | 生成 3 个概念 | R9 |
+| `app/pipeline/concept.py` | 生成 3 个概念；竞品名、需求编号、主需求重复检查 | R9 |
 | `app/pipeline/render.py` | Pillow 合成展示图 | R11 R12 |
 | `app/pipeline/export.py` `templates/report.html` | HTML 报告 + PNG zip | R16 |
 | `app/pipeline/runs.py` | 运行记录保存与读取 | R15 |
 | `app/pipeline/schemas.py` | 各步骤数据结构与 JSON Schema | R8a R9 |
 | `app/ui/streamlit_app.py`、`app/ui/pages/*` | 接口检查页 + 4 步页面，只调用 pipeline | R13 R14 |
 | `tests/fixtures/insight/*` | 第 3 轮测试样本：由真实运行 `20261106-022356-2214`（10 篇 / 88 条评论）去掉 xsec_token 等字段后得到，不含用户身份信息（2026-11-05 新增） | R8a R8b |
-| `config/app.yaml` | 抓取数量、超时、重试、图片尺寸等 | R1 |
+| `config/app.yaml` | 抓取数量、超时、重试、图片尺寸、竞品名单（第 4 轮新增 `concept.competitor_brands`）等 | R1 R9 |
 | `assets/logo/README.md` | 说明 logo 由客户提供 | R12 |
 | `tests/**`、`tests/fixtures/**` | 单元测试与模拟数据 | 全部 |
 | `start.command` | `git pull` + `docker compose up --build` | R17 |
