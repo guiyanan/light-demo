@@ -15,7 +15,7 @@ xhs:
   timeout_seconds: 30
 
 llm:
-  timeout_seconds: 120
+  timeout_seconds: 180      # Kimi 有思考过程，分析 100 条左右评论需要较长时间
   temperature: 0.3
 
 image:
