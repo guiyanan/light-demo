@@ -180,11 +180,11 @@
   - 单元测试：`tests/test_image.py::test_b64_json`、`::test_url_download`、`::test_timeout`、`::test_400_no_retry`、`::test_5xx_retry_max_2`、`::test_prompt_forbids_text_and_logo`
   - Commit：027a012
 
-- [ ] **Step 16：合成展示图**
+- [x] **Step 16：合成展示图**
   - 对应需求：R11、R12
   - 修改文件：`app/pipeline/render.py` `assets/logo/README.md`
   - 单元测试：`tests/test_render.py::test_canvas_1600x1000`、`::test_rendered_text_equals_concept_data`、`::test_cjk_font_available`、`::test_watermark_present`、`::test_logo_slot_reserved_empty`、`::test_failed_image_uses_gray_placeholder`
-  - Commit：
+  - Commit：741a605
 
 - [ ] **Step 17：网页"④产品图"页**
   - 对应需求：R13
